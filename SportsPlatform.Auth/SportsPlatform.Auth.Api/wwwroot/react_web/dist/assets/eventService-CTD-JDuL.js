@@ -1,0 +1,1 @@
+import{i as s}from"./index-CodU8c8M.js";const m=async()=>{const{data:t}=await s.get("/seasons/current");return t},u=async(t,a,e,n)=>{const r={},{data:c}=await s.get(`/clubs/${t}/teams/${a}/events`,{params:r});return c},i=async(t,a,e)=>{const{data:n}=await s.post(`/clubs/${t}/teams/${a}/events`,e);return n};export{m as a,i as c,u as g};

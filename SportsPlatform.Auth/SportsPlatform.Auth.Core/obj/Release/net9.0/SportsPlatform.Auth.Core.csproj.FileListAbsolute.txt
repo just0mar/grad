@@ -1,0 +1,12 @@
+C:\Users\Mega Store\AndroidStudioProjects\SportsPlatform.Auth\SportsPlatform.Auth.Core\bin\Release\net9.0\SportsPlatform.Auth.Core.deps.json
+C:\Users\Mega Store\AndroidStudioProjects\SportsPlatform.Auth\SportsPlatform.Auth.Core\bin\Release\net9.0\SportsPlatform.Auth.Core.dll
+C:\Users\Mega Store\AndroidStudioProjects\SportsPlatform.Auth\SportsPlatform.Auth.Core\bin\Release\net9.0\SportsPlatform.Auth.Core.pdb
+C:\Users\Mega Store\AndroidStudioProjects\SportsPlatform.Auth\SportsPlatform.Auth.Core\obj\Release\net9.0\SportsPlatform.Auth.Core.csproj.AssemblyReference.cache
+C:\Users\Mega Store\AndroidStudioProjects\SportsPlatform.Auth\SportsPlatform.Auth.Core\obj\Release\net9.0\SportsPlatform.Auth.Core.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\Mega Store\AndroidStudioProjects\SportsPlatform.Auth\SportsPlatform.Auth.Core\obj\Release\net9.0\SportsPlatform.Auth.Core.AssemblyInfoInputs.cache
+C:\Users\Mega Store\AndroidStudioProjects\SportsPlatform.Auth\SportsPlatform.Auth.Core\obj\Release\net9.0\SportsPlatform.Auth.Core.AssemblyInfo.cs
+C:\Users\Mega Store\AndroidStudioProjects\SportsPlatform.Auth\SportsPlatform.Auth.Core\obj\Release\net9.0\SportsPlatform.Auth.Core.csproj.CoreCompileInputs.cache
+C:\Users\Mega Store\AndroidStudioProjects\SportsPlatform.Auth\SportsPlatform.Auth.Core\obj\Release\net9.0\SportsPlatform.Auth.Core.dll
+C:\Users\Mega Store\AndroidStudioProjects\SportsPlatform.Auth\SportsPlatform.Auth.Core\obj\Release\net9.0\refint\SportsPlatform.Auth.Core.dll
+C:\Users\Mega Store\AndroidStudioProjects\SportsPlatform.Auth\SportsPlatform.Auth.Core\obj\Release\net9.0\SportsPlatform.Auth.Core.pdb
+C:\Users\Mega Store\AndroidStudioProjects\SportsPlatform.Auth\SportsPlatform.Auth.Core\obj\Release\net9.0\ref\SportsPlatform.Auth.Core.dll

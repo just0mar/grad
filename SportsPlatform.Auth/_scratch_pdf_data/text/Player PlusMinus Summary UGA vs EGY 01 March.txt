@@ -1,0 +1,74 @@
+                                     FIBA Basketball World Cup 2027 African                                    Player Plus/Minus
+                                                       Qualifiers                                                         Summary
+
+                                                 Borg Elarab Arena, Sun 01 Mar 2026 Start time: 23:00                         Game No.: 29779-D-6
+                                                                                                                                   Attendance: 400
+                                                   Uganda 52 – 91 Egypt
+                                                                                                                              Game Duration: 01:28
+                                                               (14-27, 9-16, 16-22, 13-26)               Report Generated: Thu 05 Mar 2026 20:37
+
+                                                      Crew Chief: Mbaye Seye (SEN) Umpire(s): GuyBertin Sani Kollo (CMR) , Kouakou Toussaint Niamien (CIV)
+
+                                                  Q1     Q2           Q3           Q4
+Scoring by 5 Minute intervals UGA 7 14                15 23        32 39        44 52
+                                                      37 43        50 65        74 91
+                                     EGY 10 27
+
+Uganda
+
+No      Name                 Mins                         Score    Points Diff  Points per Min  Assists  Rebounds   Steals  Turnovers
+                         On Off                        On Off      On Off                       On Off   On Off    On Off   On Off
+                        05:44 34:16                   2-17 50-74   -15 -24      On     Off      09       6 30      07       0 10
+                        30:49 09:11                   45-61 7-30   -16 -23                      81       28 8      52       10 0
+0      Naseef Lubowa    07:42 32:18                   9-21 43-70   -12 -27      0.35 1.46       27       7 29      16       28
+                        24:01 15:59                   32-54 20-37  -22 -17                      54       19 17     43       82
+2       Joel Rugette    14:08 25:52                   13-40 39-51  -27 -12      1.46 0.76       27       16 20     34       0 10
+                        31:33 08:27                   44-72 8-19   -28 -11                      81       24 12     61       91
+5       Peter Obleng    09:05 30:55                   11-25 41-66  -14 -25      1.17 1.33       27       10 26     34       28
+                        01:06 38:54                    3-3 49-88    0 -39                       18       1 35      16       0 10
+6      Robinson Opong   26:39 13:21                   39-56 13-35  -17 -22      1.33 1.25       72       20 16     43       82
+                        34:22 05:38                   47-73 5-18   -26 -13                      81       29 7      70       10 0
+8       Fayed Baale     14:51 25:09                   15-33 37-58  -18 -21      0.92 1.51       27       20 16     16       19
+
+9       Deng Geu                                                                1.39 0.95
+
+11      Titus Odeke                                                             1.21 1.33
+
+14      Edgar Munaba                                                            2.73 1.26
+
+21 Jonathan Komagum                                                             1.46 0.97
+
+22      Nike Sibande                                                            1.37 0.89
+
+23      Joel Kayira                                                             1.01 1.47
+
+Egypt
+
+No      Name                 Mins                         Score    Points Diff  Points per Min  Assists  Rebounds   Steals  Turnovers
+                         On Off                        On Off      On Off                       On Off   On Off    On Off   On Off
+                        20:43 19:17                   47-24 44-28  23 16        On     Off      14 14    33 29     33       67
+                        22:33 17:27                   47-29 44-23  18 21                        12 16    30 32     51       76
+1      Ibrahim Zahran   19:24 20:36                   44-27 47-25  17 22        2.27 2.28       16 12    29 33     24       49
+                        24:06 15:54                   53-43 38-9   10 29                        17 11    26 36     51       11 2
+4       Ehab Amin       08:26 31:34                   21-14 70-38  7 32         2.08 2.52       7 21     15 47     15       67
+                        14:48 25:12                   35-6 56-46   29 10                        10 18    34 28     15       1 12
+5      Amr Abdelhalim   19:01 20:59                   37-17 54-35  20 19        2.27 2.28       10 18    38 24     24       49
+                        19:43 20:17                   52-33 39-19  19 20                        17 11    23 39     42       85
+7      Ahmed Metwaly    10:44 29:16                   23-18 68-34  5 34         2.20 2.39       8 20     18 44     15       67
+                        10:00 30:00                   26-13 65-39  13 26                        8 20     19 43     15       49
+8      Mohab Abdalatif  14:01 25:59                   26-25 65-27  1 38         2.49 2.22       9 19     11 51     33       67
+                        16:31 23:29                   44-11 47-41  33 6                         12 16    34 28     24       2 11
+9       Adam Moussa                                                             2.36 2.22
+
+10     Anas Mahmoud                                                             1.95 2.57
+
+15     Patrick Gardner                                                          2.64 1.92
+
+28 Khaled Abdelgawad                                                            2.14 2.32
+
+35      Ahmed Rehan                                                             2.60 2.17
+
+50      Assem Marei                                                             1.85 2.50
+
+55      Omar Oraby                                                              2.66 2.00
+

@@ -1,0 +1,3083 @@
+--
+-- PostgreSQL database dump
+--
+
+\restrict 1fui8qOFgf4DagCqJJSh3AKClkmFgniiR3mCk9Sffz4dUP7xrIvpR0sgzDQJ8DW
+
+-- Dumped from database version 18.3
+-- Dumped by pg_dump version 18.3
+
+-- Started on 2026-03-18 23:24:15
+
+SET statement_timeout = 0;
+SET lock_timeout = 0;
+SET idle_in_transaction_session_timeout = 0;
+SET transaction_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SELECT pg_catalog.set_config('search_path', '', false);
+SET check_function_bodies = false;
+SET xmloption = content;
+SET client_min_messages = warning;
+SET row_security = off;
+
+--
+-- TOC entry 3 (class 3079 OID 18809)
+-- Name: citext; Type: EXTENSION; Schema: -; Owner: -
+--
+
+CREATE EXTENSION IF NOT EXISTS citext WITH SCHEMA public;
+
+
+--
+-- TOC entry 5625 (class 0 OID 0)
+-- Dependencies: 3
+-- Name: EXTENSION citext; Type: COMMENT; Schema: -; Owner: 
+--
+
+COMMENT ON EXTENSION citext IS 'data type for case-insensitive character strings';
+
+
+--
+-- TOC entry 2 (class 3079 OID 18771)
+-- Name: pgcrypto; Type: EXTENSION; Schema: -; Owner: -
+--
+
+CREATE EXTENSION IF NOT EXISTS pgcrypto WITH SCHEMA public;
+
+
+--
+-- TOC entry 5626 (class 0 OID 0)
+-- Dependencies: 2
+-- Name: EXTENSION pgcrypto; Type: COMMENT; Schema: -; Owner: 
+--
+
+COMMENT ON EXTENSION pgcrypto IS 'cryptographic functions';
+
+
+--
+-- TOC entry 996 (class 1247 OID 18972)
+-- Name: approval_request_status; Type: TYPE; Schema: public; Owner: postgres
+--
+
+CREATE TYPE public.approval_request_status AS ENUM (
+    'Pending',
+    'Approved',
+    'Rejected'
+);
+
+
+ALTER TYPE public.approval_request_status OWNER TO postgres;
+
+--
+-- TOC entry 981 (class 1247 OID 18922)
+-- Name: attendance_status; Type: TYPE; Schema: public; Owner: postgres
+--
+
+CREATE TYPE public.attendance_status AS ENUM (
+    'Present',
+    'Absent',
+    'Late',
+    'Injured'
+);
+
+
+ALTER TYPE public.attendance_status OWNER TO postgres;
+
+--
+-- TOC entry 999 (class 1247 OID 18980)
+-- Name: auth_provider_type; Type: TYPE; Schema: public; Owner: postgres
+--
+
+CREATE TYPE public.auth_provider_type AS ENUM (
+    'local',
+    'google',
+    'apple',
+    'microsoft',
+    'phone',
+    'magic_link'
+);
+
+
+ALTER TYPE public.auth_provider_type OWNER TO postgres;
+
+--
+-- TOC entry 978 (class 1247 OID 18915)
+-- Name: event_type; Type: TYPE; Schema: public; Owner: postgres
+--
+
+CREATE TYPE public.event_type AS ENUM (
+    'Match',
+    'Training',
+    'Meeting',
+    'Test'
+);
+
+
+ALTER TYPE public.event_type OWNER TO postgres;
+
+--
+-- TOC entry 1002 (class 1247 OID 18994)
+-- Name: file_entity_type; Type: TYPE; Schema: public; Owner: postgres
+--
+
+CREATE TYPE public.file_entity_type AS ENUM (
+    'coaching_plan',
+    'medical_record',
+    'fitness_record',
+    'team_game_stats',
+    'player_game_stats',
+    'announcement'
+);
+
+
+ALTER TYPE public.file_entity_type OWNER TO postgres;
+
+--
+-- TOC entry 984 (class 1247 OID 18932)
+-- Name: match_result; Type: TYPE; Schema: public; Owner: postgres
+--
+
+CREATE TYPE public.match_result AS ENUM (
+    'Win',
+    'Loss',
+    'Draw'
+);
+
+
+ALTER TYPE public.match_result OWNER TO postgres;
+
+--
+-- TOC entry 990 (class 1247 OID 18950)
+-- Name: role_name_type; Type: TYPE; Schema: public; Owner: postgres
+--
+
+CREATE TYPE public.role_name_type AS ENUM (
+    'Admin',
+    'Manager',
+    'Coach',
+    'Player',
+    'Medic',
+    'Analyst'
+);
+
+
+ALTER TYPE public.role_name_type OWNER TO postgres;
+
+--
+-- TOC entry 987 (class 1247 OID 18940)
+-- Name: staff_role_type; Type: TYPE; Schema: public; Owner: postgres
+--
+
+CREATE TYPE public.staff_role_type AS ENUM (
+    'Head Coach',
+    'Assistant',
+    'Medic',
+    'Analyst'
+);
+
+
+ALTER TYPE public.staff_role_type OWNER TO postgres;
+
+--
+-- TOC entry 993 (class 1247 OID 18964)
+-- Name: user_role_status; Type: TYPE; Schema: public; Owner: postgres
+--
+
+CREATE TYPE public.user_role_status AS ENUM (
+    'Pending',
+    'Approved',
+    'Rejected'
+);
+
+
+ALTER TYPE public.user_role_status OWNER TO postgres;
+
+--
+-- TOC entry 337 (class 1255 OID 19469)
+-- Name: check_event_type_is_match(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.check_event_type_is_match() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+    IF (SELECT event_type FROM event WHERE event_id = NEW.event_id) != 'Match' THEN
+        RAISE EXCEPTION 'event_id % is not a Match-type event', NEW.event_id;
+    END IF;
+    RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION public.check_event_type_is_match() OWNER TO postgres;
+
+--
+-- TOC entry 298 (class 1255 OID 19471)
+-- Name: check_match_result_vs_scores(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.check_match_result_vs_scores() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+    -- Only validate when both scores AND result are present
+    IF NEW.result IS NOT NULL THEN
+        IF NEW.result = 'Win'  AND NEW.team_score <= NEW.opponent_score THEN
+            RAISE EXCEPTION
+                'result is Win but team_score (%) <= opponent_score (%)',
+                NEW.team_score, NEW.opponent_score;
+        END IF;
+        IF NEW.result = 'Loss' AND NEW.team_score >= NEW.opponent_score THEN
+            RAISE EXCEPTION
+                'result is Loss but team_score (%) >= opponent_score (%)',
+                NEW.team_score, NEW.opponent_score;
+        END IF;
+        IF NEW.result = 'Draw' AND NEW.team_score != NEW.opponent_score THEN
+            RAISE EXCEPTION
+                'result is Draw but team_score (%) != opponent_score (%)',
+                NEW.team_score, NEW.opponent_score;
+        END IF;
+    END IF;
+    RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION public.check_match_result_vs_scores() OWNER TO postgres;
+
+--
+-- TOC entry 260 (class 1255 OID 19257)
+-- Name: check_player_has_role(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.check_player_has_role() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM user_role ur
+        JOIN role r ON r.role_id = ur.role_id
+        WHERE ur.user_id  = NEW.user_id
+          AND r.role_name = 'Player'
+          AND ur.status   = 'Approved'
+    ) THEN
+        RAISE EXCEPTION 'User % needs an approved Player role before a player_profile can be created',
+            NEW.user_id;
+    END IF;
+    RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION public.check_player_has_role() OWNER TO postgres;
+
+--
+-- TOC entry 321 (class 1255 OID 19236)
+-- Name: check_staff_has_role(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.check_staff_has_role() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+    required_role role_name_type;
+BEGIN
+    required_role := CASE NEW.staff_role
+        WHEN 'Head Coach' THEN 'Coach'
+        WHEN 'Assistant'  THEN 'Coach'
+        WHEN 'Medic'      THEN 'Medic'
+        WHEN 'Analyst'    THEN 'Analyst'
+    END;
+    IF NOT EXISTS (
+        SELECT 1 FROM user_role ur
+        JOIN role r ON r.role_id = ur.role_id
+        WHERE ur.user_id  = NEW.user_id
+          AND ur.team_id  = NEW.team_id
+          AND r.role_name = required_role
+          AND ur.status   = 'Approved'
+    ) THEN
+        RAISE EXCEPTION 'User % needs an approved % role on team % before becoming team_staff',
+            NEW.user_id, required_role, NEW.team_id;
+    END IF;
+    RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION public.check_staff_has_role() OWNER TO postgres;
+
+--
+-- TOC entry 295 (class 1255 OID 19942)
+-- Name: cleanup_expired_tokens(integer); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.cleanup_expired_tokens(p_retain_days integer DEFAULT 30) RETURNS integer
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+    rows_deleted INT;
+BEGIN
+    DELETE FROM refresh_token
+    WHERE expires_at < NOW() - (p_retain_days || ' days')::INTERVAL
+       OR (revoked_at IS NOT NULL
+           AND revoked_at < NOW() - (p_retain_days || ' days')::INTERVAL);
+
+    GET DIAGNOSTICS rows_deleted = ROW_COUNT;
+    RETURN rows_deleted;
+END;
+$$;
+
+
+ALTER FUNCTION public.cleanup_expired_tokens(p_retain_days integer) OWNER TO postgres;
+
+--
+-- TOC entry 283 (class 1255 OID 19640)
+-- Name: refresh_cumulative_stats(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.refresh_cumulative_stats() RETURNS void
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+    REFRESH MATERIALIZED VIEW CONCURRENTLY player_cumulative_stats;
+    REFRESH MATERIALIZED VIEW CONCURRENTLY team_cumulative_stats;
+END;
+$$;
+
+
+ALTER FUNCTION public.refresh_cumulative_stats() OWNER TO postgres;
+
+--
+-- TOC entry 341 (class 1255 OID 19941)
+-- Name: revoke_all_user_tokens(uuid, character varying); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.revoke_all_user_tokens(p_user_id uuid, p_reason character varying DEFAULT 'logout_all'::character varying) RETURNS integer
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+    rows_affected INT;
+BEGIN
+    UPDATE refresh_token
+    SET    revoked_at     = NOW(),
+           revoked_reason = p_reason
+    WHERE  user_id   = p_user_id
+      AND  revoked_at IS NULL;
+
+    GET DIAGNOSTICS rows_affected = ROW_COUNT;
+    RETURN rows_affected;   -- caller can log how many sessions were killed
+END;
+$$;
+
+
+ALTER FUNCTION public.revoke_all_user_tokens(p_user_id uuid, p_reason character varying) OWNER TO postgres;
+
+--
+-- TOC entry 307 (class 1255 OID 19887)
+-- Name: set_updated_at(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.set_updated_at() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION public.set_updated_at() OWNER TO postgres;
+
+SET default_tablespace = '';
+
+SET default_table_access_method = heap;
+
+--
+-- TOC entry 242 (class 1259 OID 19641)
+-- Name: ai_lineup_suggestion; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.ai_lineup_suggestion (
+    suggestion_id uuid DEFAULT gen_random_uuid() NOT NULL,
+    match_id uuid NOT NULL,
+    ai_reasoning text,
+    confidence_score numeric(4,3),
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+ALTER TABLE public.ai_lineup_suggestion OWNER TO postgres;
+
+--
+-- TOC entry 250 (class 1259 OID 19835)
+-- Name: announcement; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.announcement (
+    announcement_id uuid DEFAULT gen_random_uuid() NOT NULL,
+    team_id uuid NOT NULL,
+    creator_user_id uuid NOT NULL,
+    title character varying(300) NOT NULL,
+    content text NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+ALTER TABLE public.announcement OWNER TO postgres;
+
+--
+-- TOC entry 251 (class 1259 OID 19863)
+-- Name: announcement_read; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.announcement_read (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    announcement_id uuid NOT NULL,
+    user_id uuid NOT NULL,
+    read_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+ALTER TABLE public.announcement_read OWNER TO postgres;
+
+--
+-- TOC entry 236 (class 1259 OID 19397)
+-- Name: attendance; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.attendance (
+    attendance_id uuid DEFAULT gen_random_uuid() NOT NULL,
+    event_id uuid NOT NULL,
+    player_id uuid NOT NULL,
+    recorded_by_staff_id uuid,
+    status public.attendance_status NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+ALTER TABLE public.attendance OWNER TO postgres;
+
+--
+-- TOC entry 234 (class 1259 OID 19338)
+-- Name: coaching_plan; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.coaching_plan (
+    plan_id uuid DEFAULT gen_random_uuid() NOT NULL,
+    creator_staff_id uuid NOT NULL,
+    team_id uuid NOT NULL,
+    title character varying(200) NOT NULL,
+    description text,
+    deleted_at timestamp with time zone,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+ALTER TABLE public.coaching_plan OWNER TO postgres;
+
+--
+-- TOC entry 246 (class 1259 OID 19746)
+-- Name: conversation; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.conversation (
+    conversation_id uuid DEFAULT gen_random_uuid() NOT NULL,
+    team_id uuid,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+ALTER TABLE public.conversation OWNER TO postgres;
+
+--
+-- TOC entry 247 (class 1259 OID 19760)
+-- Name: conversation_participant; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.conversation_participant (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    conversation_id uuid NOT NULL,
+    user_id uuid NOT NULL,
+    joined_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+ALTER TABLE public.conversation_participant OWNER TO postgres;
+
+--
+-- TOC entry 233 (class 1259 OID 19309)
+-- Name: event; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.event (
+    event_id uuid DEFAULT gen_random_uuid() NOT NULL,
+    team_id uuid NOT NULL,
+    season_id uuid NOT NULL,
+    event_date timestamp with time zone NOT NULL,
+    event_type public.event_type NOT NULL,
+    deleted_at timestamp with time zone,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+ALTER TABLE public.event OWNER TO postgres;
+
+--
+-- TOC entry 232 (class 1259 OID 19288)
+-- Name: file_attachment; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.file_attachment (
+    file_id uuid DEFAULT gen_random_uuid() NOT NULL,
+    uploader_id uuid,
+    url text NOT NULL,
+    mime_type character varying(100),
+    size_bytes bigint,
+    entity_type public.file_entity_type NOT NULL,
+    entity_id uuid NOT NULL,
+    uploaded_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+ALTER TABLE public.file_attachment OWNER TO postgres;
+
+--
+-- TOC entry 245 (class 1259 OID 19721)
+-- Name: fitness_record; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.fitness_record (
+    fitness_id uuid DEFAULT gen_random_uuid() NOT NULL,
+    player_id uuid NOT NULL,
+    fitness_staff_id uuid,
+    test_date timestamp with time zone DEFAULT now() NOT NULL,
+    bmi numeric(5,2),
+    body_fat_pct numeric(5,2),
+    speed_test_result numeric(6,2),
+    endurance_score numeric(6,2),
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+ALTER TABLE public.fitness_record OWNER TO postgres;
+
+--
+-- TOC entry 243 (class 1259 OID 19661)
+-- Name: lineup_player; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.lineup_player (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    suggestion_id uuid NOT NULL,
+    player_id uuid NOT NULL,
+    "position" character varying(50)
+);
+
+
+ALTER TABLE public.lineup_player OWNER TO postgres;
+
+--
+-- TOC entry 237 (class 1259 OID 19430)
+-- Name: match; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.match (
+    match_id uuid DEFAULT gen_random_uuid() NOT NULL,
+    event_id uuid NOT NULL,
+    season_id uuid NOT NULL,
+    score_keeper_staff_id uuid,
+    opponent_name character varying(200) NOT NULL,
+    team_score integer DEFAULT 0 NOT NULL,
+    opponent_score integer DEFAULT 0 NOT NULL,
+    result public.match_result,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT match_opponent_score_check CHECK ((opponent_score >= 0)),
+    CONSTRAINT match_team_score_check CHECK ((team_score >= 0))
+);
+
+
+ALTER TABLE public.match OWNER TO postgres;
+
+--
+-- TOC entry 244 (class 1259 OID 19684)
+-- Name: medical_record; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.medical_record (
+    record_id uuid DEFAULT gen_random_uuid() NOT NULL,
+    player_id uuid NOT NULL,
+    doctor_staff_id uuid,
+    record_date timestamp with time zone DEFAULT now() NOT NULL,
+    injury_type character varying(200),
+    diagnosis text,
+    expected_return_date date,
+    created_by uuid,
+    updated_by uuid,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+ALTER TABLE public.medical_record OWNER TO postgres;
+
+--
+-- TOC entry 248 (class 1259 OID 19784)
+-- Name: message; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.message (
+    message_id uuid DEFAULT gen_random_uuid() NOT NULL,
+    conversation_id uuid NOT NULL,
+    sender_user_id uuid NOT NULL,
+    content text NOT NULL,
+    sent_at timestamp with time zone DEFAULT now() NOT NULL,
+    deleted_at timestamp with time zone
+);
+
+
+ALTER TABLE public.message OWNER TO postgres;
+
+--
+-- TOC entry 249 (class 1259 OID 19810)
+-- Name: message_read; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.message_read (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    message_id uuid NOT NULL,
+    user_id uuid NOT NULL,
+    read_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+ALTER TABLE public.message_read OWNER TO postgres;
+
+--
+-- TOC entry 239 (class 1259 OID 19542)
+-- Name: player_game_stats; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.player_game_stats (
+    game_stat_id uuid DEFAULT gen_random_uuid() NOT NULL,
+    match_id uuid NOT NULL,
+    player_id uuid NOT NULL,
+    season_id uuid NOT NULL,
+    minutes_played integer DEFAULT 0 NOT NULL,
+    points integer DEFAULT 0 NOT NULL,
+    rebounds integer DEFAULT 0 NOT NULL,
+    assists integer DEFAULT 0 NOT NULL,
+    steals integer DEFAULT 0 NOT NULL,
+    blocks integer DEFAULT 0 NOT NULL,
+    turnovers integer DEFAULT 0 NOT NULL,
+    personal_fouls integer DEFAULT 0 NOT NULL,
+    fg_made integer DEFAULT 0 NOT NULL,
+    fg_attempted integer DEFAULT 0 NOT NULL,
+    three_made integer DEFAULT 0 NOT NULL,
+    ft_made integer DEFAULT 0 NOT NULL,
+    game_efficiency numeric(6,2),
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT chk_pgs_3pt CHECK ((three_made <= fg_attempted)),
+    CONSTRAINT chk_pgs_fg CHECK ((fg_made <= fg_attempted)),
+    CONSTRAINT player_game_stats_assists_check CHECK ((assists >= 0)),
+    CONSTRAINT player_game_stats_blocks_check CHECK ((blocks >= 0)),
+    CONSTRAINT player_game_stats_fg_attempted_check CHECK ((fg_attempted >= 0)),
+    CONSTRAINT player_game_stats_fg_made_check CHECK ((fg_made >= 0)),
+    CONSTRAINT player_game_stats_ft_made_check CHECK ((ft_made >= 0)),
+    CONSTRAINT player_game_stats_minutes_played_check CHECK ((minutes_played >= 0)),
+    CONSTRAINT player_game_stats_personal_fouls_check CHECK ((personal_fouls >= 0)),
+    CONSTRAINT player_game_stats_points_check CHECK ((points >= 0)),
+    CONSTRAINT player_game_stats_rebounds_check CHECK ((rebounds >= 0)),
+    CONSTRAINT player_game_stats_steals_check CHECK ((steals >= 0)),
+    CONSTRAINT player_game_stats_three_made_check CHECK ((three_made >= 0)),
+    CONSTRAINT player_game_stats_turnovers_check CHECK ((turnovers >= 0))
+);
+
+
+ALTER TABLE public.player_game_stats OWNER TO postgres;
+
+--
+-- TOC entry 221 (class 1259 OID 19007)
+-- Name: season; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.season (
+    season_id uuid DEFAULT gen_random_uuid() NOT NULL,
+    label character varying(20) NOT NULL,
+    start_date date NOT NULL,
+    end_date date NOT NULL,
+    is_current boolean DEFAULT false NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT chk_season_dates CHECK ((end_date > start_date))
+);
+
+
+ALTER TABLE public.season OWNER TO postgres;
+
+--
+-- TOC entry 240 (class 1259 OID 19614)
+-- Name: player_cumulative_stats; Type: MATERIALIZED VIEW; Schema: public; Owner: postgres
+--
+
+CREATE MATERIALIZED VIEW public.player_cumulative_stats AS
+ SELECT pgs.player_id,
+    pgs.season_id,
+    s.label AS season_label,
+    count(*) AS matches_played,
+    sum(pgs.minutes_played) AS total_minutes,
+    sum(pgs.points) AS total_points,
+    sum(pgs.rebounds) AS total_rebounds,
+    sum(pgs.assists) AS total_assists,
+    sum(pgs.steals) AS total_steals,
+    sum(pgs.blocks) AS total_blocks,
+    sum(pgs.turnovers) AS total_turnovers,
+    sum(pgs.personal_fouls) AS total_fouls,
+    sum(pgs.fg_made) AS total_fg_made,
+    sum(pgs.fg_attempted) AS total_fg_attempted,
+    sum(pgs.three_made) AS total_three_made,
+    sum(pgs.ft_made) AS total_ft_made,
+    round(avg(pgs.game_efficiency), 2) AS avg_efficiency
+   FROM (public.player_game_stats pgs
+     JOIN public.season s USING (season_id))
+  GROUP BY pgs.player_id, pgs.season_id, s.label
+  WITH NO DATA;
+
+
+ALTER MATERIALIZED VIEW public.player_cumulative_stats OWNER TO postgres;
+
+--
+-- TOC entry 230 (class 1259 OID 19238)
+-- Name: player_profile; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.player_profile (
+    player_id uuid DEFAULT gen_random_uuid() NOT NULL,
+    user_id uuid NOT NULL,
+    "position" character varying(50),
+    height numeric(5,2),
+    weight numeric(5,2),
+    deleted_at timestamp with time zone,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+ALTER TABLE public.player_profile OWNER TO postgres;
+
+--
+-- TOC entry 231 (class 1259 OID 19259)
+-- Name: player_team; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.player_team (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    player_id uuid NOT NULL,
+    team_id uuid NOT NULL,
+    joined_date date NOT NULL,
+    left_date date,
+    is_current boolean DEFAULT true NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT chk_player_team_dates CHECK (((left_date IS NULL) OR (left_date > joined_date)))
+);
+
+
+ALTER TABLE public.player_team OWNER TO postgres;
+
+--
+-- TOC entry 253 (class 1259 OID 19946)
+-- Name: refresh_token; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.refresh_token (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    user_id uuid CONSTRAINT refresh_token_user_id_not_null1 NOT NULL,
+    token text NOT NULL,
+    expires_at timestamp with time zone CONSTRAINT refresh_token_expires_at_not_null1 NOT NULL,
+    revoked_at timestamp with time zone,
+    created_at timestamp with time zone DEFAULT now() CONSTRAINT refresh_token_created_at_not_null1 NOT NULL
+);
+
+
+ALTER TABLE public.refresh_token OWNER TO postgres;
+
+--
+-- TOC entry 252 (class 1259 OID 19911)
+-- Name: refresh_token_legacy_backup; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.refresh_token_legacy_backup (
+    token_id uuid DEFAULT gen_random_uuid() CONSTRAINT refresh_token_token_id_not_null NOT NULL,
+    user_id uuid CONSTRAINT refresh_token_user_id_not_null NOT NULL,
+    auth_provider_id uuid CONSTRAINT refresh_token_auth_provider_id_not_null NOT NULL,
+    token_hash text CONSTRAINT refresh_token_token_hash_not_null NOT NULL,
+    expires_at timestamp with time zone CONSTRAINT refresh_token_expires_at_not_null NOT NULL,
+    revoked_at timestamp with time zone,
+    revoked_reason character varying(100),
+    device_name character varying(200),
+    ip_address inet,
+    user_agent text,
+    created_at timestamp with time zone DEFAULT now() CONSTRAINT refresh_token_created_at_not_null NOT NULL
+);
+
+
+ALTER TABLE public.refresh_token_legacy_backup OWNER TO postgres;
+
+--
+-- TOC entry 223 (class 1259 OID 19041)
+-- Name: role; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.role (
+    role_id uuid DEFAULT gen_random_uuid() NOT NULL,
+    role_name public.role_name_type NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+ALTER TABLE public.role OWNER TO postgres;
+
+--
+-- TOC entry 227 (class 1259 OID 19138)
+-- Name: team; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.team (
+    team_id uuid DEFAULT gen_random_uuid() NOT NULL,
+    team_name character varying(100) NOT NULL,
+    category_id uuid NOT NULL,
+    manager_user_id uuid,
+    deleted_at timestamp with time zone,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+ALTER TABLE public.team OWNER TO postgres;
+
+--
+-- TOC entry 222 (class 1259 OID 19027)
+-- Name: team_category; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.team_category (
+    category_id uuid DEFAULT gen_random_uuid() NOT NULL,
+    name character varying(50) NOT NULL,
+    min_age integer,
+    max_age integer,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+ALTER TABLE public.team_category OWNER TO postgres;
+
+--
+-- TOC entry 238 (class 1259 OID 19473)
+-- Name: team_game_stats; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.team_game_stats (
+    report_id uuid DEFAULT gen_random_uuid() NOT NULL,
+    match_id uuid NOT NULL,
+    season_id uuid NOT NULL,
+    analyst_staff_id uuid,
+    points_scored integer DEFAULT 0 NOT NULL,
+    points_conceded integer DEFAULT 0 NOT NULL,
+    total_rebounds integer DEFAULT 0 NOT NULL,
+    total_turnovers integer DEFAULT 0 NOT NULL,
+    total_fouls integer DEFAULT 0 NOT NULL,
+    total_assists integer DEFAULT 0 NOT NULL,
+    total_steals integer DEFAULT 0 NOT NULL,
+    total_blocks integer DEFAULT 0 NOT NULL,
+    total_fg_made integer DEFAULT 0 NOT NULL,
+    total_fg_attempted integer DEFAULT 0 NOT NULL,
+    total_three_made integer DEFAULT 0 NOT NULL,
+    total_ft_made integer DEFAULT 0 NOT NULL,
+    team_efficiency numeric(6,2),
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT chk_tgs_3pt CHECK ((total_three_made <= total_fg_attempted)),
+    CONSTRAINT chk_tgs_fg CHECK ((total_fg_made <= total_fg_attempted)),
+    CONSTRAINT team_game_stats_points_conceded_check CHECK ((points_conceded >= 0)),
+    CONSTRAINT team_game_stats_points_scored_check CHECK ((points_scored >= 0)),
+    CONSTRAINT team_game_stats_total_assists_check CHECK ((total_assists >= 0)),
+    CONSTRAINT team_game_stats_total_blocks_check CHECK ((total_blocks >= 0)),
+    CONSTRAINT team_game_stats_total_fg_attempted_check CHECK ((total_fg_attempted >= 0)),
+    CONSTRAINT team_game_stats_total_fg_made_check CHECK ((total_fg_made >= 0)),
+    CONSTRAINT team_game_stats_total_fouls_check CHECK ((total_fouls >= 0)),
+    CONSTRAINT team_game_stats_total_ft_made_check CHECK ((total_ft_made >= 0)),
+    CONSTRAINT team_game_stats_total_rebounds_check CHECK ((total_rebounds >= 0)),
+    CONSTRAINT team_game_stats_total_steals_check CHECK ((total_steals >= 0)),
+    CONSTRAINT team_game_stats_total_three_made_check CHECK ((total_three_made >= 0)),
+    CONSTRAINT team_game_stats_total_turnovers_check CHECK ((total_turnovers >= 0))
+);
+
+
+ALTER TABLE public.team_game_stats OWNER TO postgres;
+
+--
+-- TOC entry 241 (class 1259 OID 19627)
+-- Name: team_cumulative_stats; Type: MATERIALIZED VIEW; Schema: public; Owner: postgres
+--
+
+CREATE MATERIALIZED VIEW public.team_cumulative_stats AS
+ SELECT m.season_id,
+    s.label AS season_label,
+    e.team_id,
+    count(*) AS matches_played,
+    sum(
+        CASE
+            WHEN (m.result = 'Win'::public.match_result) THEN 1
+            ELSE 0
+        END) AS wins,
+    sum(
+        CASE
+            WHEN (m.result = 'Loss'::public.match_result) THEN 1
+            ELSE 0
+        END) AS losses,
+    sum(
+        CASE
+            WHEN (m.result = 'Draw'::public.match_result) THEN 1
+            ELSE 0
+        END) AS draws,
+    sum(tgs.points_scored) AS total_points_scored,
+    sum(tgs.points_conceded) AS total_points_conceded,
+    sum(tgs.total_rebounds) AS total_rebounds,
+    sum(tgs.total_assists) AS total_assists,
+    sum(tgs.total_steals) AS total_steals,
+    sum(tgs.total_blocks) AS total_blocks,
+    sum(tgs.total_turnovers) AS total_turnovers,
+    sum(tgs.total_fouls) AS total_fouls,
+    sum(tgs.total_fg_made) AS total_fg_made,
+    sum(tgs.total_fg_attempted) AS total_fg_attempted,
+    sum(tgs.total_three_made) AS total_three_made,
+    sum(tgs.total_ft_made) AS total_ft_made,
+    round(avg(tgs.team_efficiency), 2) AS avg_efficiency
+   FROM (((public.match m
+     JOIN public.event e USING (event_id))
+     JOIN public.season s ON ((s.season_id = m.season_id)))
+     JOIN public.team_game_stats tgs ON ((tgs.match_id = m.match_id)))
+  GROUP BY m.season_id, s.label, e.team_id
+  WITH NO DATA;
+
+
+ALTER MATERIALIZED VIEW public.team_cumulative_stats OWNER TO postgres;
+
+--
+-- TOC entry 229 (class 1259 OID 19204)
+-- Name: team_staff; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.team_staff (
+    staff_id uuid DEFAULT gen_random_uuid() NOT NULL,
+    user_id uuid NOT NULL,
+    team_id uuid NOT NULL,
+    staff_role public.staff_role_type NOT NULL,
+    joined_date date DEFAULT CURRENT_DATE NOT NULL,
+    left_date date,
+    is_current boolean DEFAULT true NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT chk_staff_dates CHECK (((left_date IS NULL) OR (left_date > joined_date)))
+);
+
+
+ALTER TABLE public.team_staff OWNER TO postgres;
+
+--
+-- TOC entry 235 (class 1259 OID 19365)
+-- Name: training_session; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.training_session (
+    session_id uuid DEFAULT gen_random_uuid() NOT NULL,
+    event_id uuid NOT NULL,
+    plan_id uuid,
+    conducted_by_staff_id uuid,
+    session_notes text,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+ALTER TABLE public.training_session OWNER TO postgres;
+
+--
+-- TOC entry 225 (class 1259 OID 19075)
+-- Name: user_approval_request; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.user_approval_request (
+    request_id uuid DEFAULT gen_random_uuid() NOT NULL,
+    user_id uuid NOT NULL,
+    status public.approval_request_status DEFAULT 'Pending'::public.approval_request_status NOT NULL,
+    submitted_at timestamp with time zone DEFAULT now() NOT NULL,
+    reviewed_by uuid,
+    reviewed_at timestamp with time zone,
+    notes text,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+ALTER TABLE public.user_approval_request OWNER TO postgres;
+
+--
+-- TOC entry 226 (class 1259 OID 19106)
+-- Name: user_auth_provider; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.user_auth_provider (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    user_id uuid NOT NULL,
+    provider public.auth_provider_type NOT NULL,
+    provider_user_id character varying(255),
+    provider_identifier character varying(255),
+    password_hash text,
+    is_verified boolean DEFAULT false NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT chk_local_needs_password CHECK (((provider <> 'local'::public.auth_provider_type) OR (password_hash IS NOT NULL))),
+    CONSTRAINT chk_oauth_needs_sub CHECK (((provider <> ALL (ARRAY['google'::public.auth_provider_type, 'apple'::public.auth_provider_type, 'microsoft'::public.auth_provider_type])) OR (provider_user_id IS NOT NULL))),
+    CONSTRAINT chk_phone_needs_identifier CHECK (((provider <> 'phone'::public.auth_provider_type) OR (provider_identifier IS NOT NULL)))
+);
+
+
+ALTER TABLE public.user_auth_provider OWNER TO postgres;
+
+--
+-- TOC entry 228 (class 1259 OID 19164)
+-- Name: user_role; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.user_role (
+    user_role_id uuid DEFAULT gen_random_uuid() NOT NULL,
+    user_id uuid NOT NULL,
+    role_id uuid NOT NULL,
+    team_id uuid,
+    status public.user_role_status DEFAULT 'Pending'::public.user_role_status NOT NULL,
+    assigned_by uuid,
+    assigned_at timestamp with time zone,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+ALTER TABLE public.user_role OWNER TO postgres;
+
+--
+-- TOC entry 224 (class 1259 OID 19055)
+-- Name: users; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.users (
+    user_id uuid DEFAULT gen_random_uuid() NOT NULL,
+    email public.citext NOT NULL,
+    username public.citext,
+    name character varying(200) NOT NULL,
+    phone_number character varying(30),
+    dob date,
+    deleted_at timestamp with time zone,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT users_username_check CHECK ((username OPERATOR(public.~) '^[a-zA-Z0-9_]{3,50}$'::public.citext))
+);
+
+
+ALTER TABLE public.users OWNER TO postgres;
+
+--
+-- TOC entry 5608 (class 0 OID 19641)
+-- Dependencies: 242
+-- Data for Name: ai_lineup_suggestion; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.ai_lineup_suggestion (suggestion_id, match_id, ai_reasoning, confidence_score, created_at, updated_at) FROM stdin;
+\.
+
+
+--
+-- TOC entry 5616 (class 0 OID 19835)
+-- Dependencies: 250
+-- Data for Name: announcement; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.announcement (announcement_id, team_id, creator_user_id, title, content, created_at, updated_at) FROM stdin;
+\.
+
+
+--
+-- TOC entry 5617 (class 0 OID 19863)
+-- Dependencies: 251
+-- Data for Name: announcement_read; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.announcement_read (id, announcement_id, user_id, read_at) FROM stdin;
+\.
+
+
+--
+-- TOC entry 5602 (class 0 OID 19397)
+-- Dependencies: 236
+-- Data for Name: attendance; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.attendance (attendance_id, event_id, player_id, recorded_by_staff_id, status, created_at, updated_at) FROM stdin;
+\.
+
+
+--
+-- TOC entry 5600 (class 0 OID 19338)
+-- Dependencies: 234
+-- Data for Name: coaching_plan; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.coaching_plan (plan_id, creator_staff_id, team_id, title, description, deleted_at, created_at, updated_at) FROM stdin;
+\.
+
+
+--
+-- TOC entry 5612 (class 0 OID 19746)
+-- Dependencies: 246
+-- Data for Name: conversation; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.conversation (conversation_id, team_id, created_at) FROM stdin;
+\.
+
+
+--
+-- TOC entry 5613 (class 0 OID 19760)
+-- Dependencies: 247
+-- Data for Name: conversation_participant; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.conversation_participant (id, conversation_id, user_id, joined_at) FROM stdin;
+\.
+
+
+--
+-- TOC entry 5599 (class 0 OID 19309)
+-- Dependencies: 233
+-- Data for Name: event; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.event (event_id, team_id, season_id, event_date, event_type, deleted_at, created_at, updated_at) FROM stdin;
+\.
+
+
+--
+-- TOC entry 5598 (class 0 OID 19288)
+-- Dependencies: 232
+-- Data for Name: file_attachment; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.file_attachment (file_id, uploader_id, url, mime_type, size_bytes, entity_type, entity_id, uploaded_at) FROM stdin;
+\.
+
+
+--
+-- TOC entry 5611 (class 0 OID 19721)
+-- Dependencies: 245
+-- Data for Name: fitness_record; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.fitness_record (fitness_id, player_id, fitness_staff_id, test_date, bmi, body_fat_pct, speed_test_result, endurance_score, created_at, updated_at) FROM stdin;
+\.
+
+
+--
+-- TOC entry 5609 (class 0 OID 19661)
+-- Dependencies: 243
+-- Data for Name: lineup_player; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.lineup_player (id, suggestion_id, player_id, "position") FROM stdin;
+\.
+
+
+--
+-- TOC entry 5603 (class 0 OID 19430)
+-- Dependencies: 237
+-- Data for Name: match; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.match (match_id, event_id, season_id, score_keeper_staff_id, opponent_name, team_score, opponent_score, result, created_at, updated_at) FROM stdin;
+\.
+
+
+--
+-- TOC entry 5610 (class 0 OID 19684)
+-- Dependencies: 244
+-- Data for Name: medical_record; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.medical_record (record_id, player_id, doctor_staff_id, record_date, injury_type, diagnosis, expected_return_date, created_by, updated_by, created_at, updated_at) FROM stdin;
+\.
+
+
+--
+-- TOC entry 5614 (class 0 OID 19784)
+-- Dependencies: 248
+-- Data for Name: message; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.message (message_id, conversation_id, sender_user_id, content, sent_at, deleted_at) FROM stdin;
+\.
+
+
+--
+-- TOC entry 5615 (class 0 OID 19810)
+-- Dependencies: 249
+-- Data for Name: message_read; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.message_read (id, message_id, user_id, read_at) FROM stdin;
+\.
+
+
+--
+-- TOC entry 5605 (class 0 OID 19542)
+-- Dependencies: 239
+-- Data for Name: player_game_stats; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.player_game_stats (game_stat_id, match_id, player_id, season_id, minutes_played, points, rebounds, assists, steals, blocks, turnovers, personal_fouls, fg_made, fg_attempted, three_made, ft_made, game_efficiency, created_at, updated_at) FROM stdin;
+\.
+
+
+--
+-- TOC entry 5596 (class 0 OID 19238)
+-- Dependencies: 230
+-- Data for Name: player_profile; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.player_profile (player_id, user_id, "position", height, weight, deleted_at, created_at, updated_at) FROM stdin;
+\.
+
+
+--
+-- TOC entry 5597 (class 0 OID 19259)
+-- Dependencies: 231
+-- Data for Name: player_team; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.player_team (id, player_id, team_id, joined_date, left_date, is_current, created_at, updated_at) FROM stdin;
+\.
+
+
+--
+-- TOC entry 5619 (class 0 OID 19946)
+-- Dependencies: 253
+-- Data for Name: refresh_token; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.refresh_token (id, user_id, token, expires_at, revoked_at, created_at) FROM stdin;
+4c998e36-b7d5-4ced-81c9-6bbdbff41efb	918d9142-0af3-4339-ac83-2f1ab81d0c94	6c5kqwTIIaWjRY/KeCjfkKvgBA6NBlN4dIavkiBSDS+2FLquwYvgiYB4whTDzaKYA6mFpbS9odqcr28ylK7IYQ==	2026-03-24 23:48:21.995397+02	\N	2026-03-17 23:48:21.995398+02
+ecc758bc-9d97-4e34-bdcc-b67127ebf39c	918d9142-0af3-4339-ac83-2f1ab81d0c94	gWDMJvm3bk1nMCcqFNfY7SvlG7pCm1HqoL4W4pAr9pAj3/BbOWxXAC2id7mJZpPfXLhY87MaM+IosgwOSLEOcg==	2026-03-25 19:20:50.839396+02	\N	2026-03-18 19:20:50.839458+02
+7b4fa7e2-cfd3-4222-ad97-5a18319990c6	918d9142-0af3-4339-ac83-2f1ab81d0c94	t5L54FOgswH0cu+ssxocqcW7Vt6tUtJGVRrDIpkDbG9EZnAT1rXual7ViwPJr8hD5h2KCDGYjR+VQDOMA66MsA==	2026-03-25 19:34:07.489549+02	\N	2026-03-18 19:34:07.48955+02
+\.
+
+
+--
+-- TOC entry 5618 (class 0 OID 19911)
+-- Dependencies: 252
+-- Data for Name: refresh_token_legacy_backup; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.refresh_token_legacy_backup (token_id, user_id, auth_provider_id, token_hash, expires_at, revoked_at, revoked_reason, device_name, ip_address, user_agent, created_at) FROM stdin;
+\.
+
+
+--
+-- TOC entry 5589 (class 0 OID 19041)
+-- Dependencies: 223
+-- Data for Name: role; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.role (role_id, role_name, created_at, updated_at) FROM stdin;
+91f7caa9-634e-4240-9ba6-ab59254b5bc0	Admin	2026-03-17 05:28:19.555656+02	2026-03-17 05:28:19.555656+02
+833a33d6-9846-4e8a-b7e2-a548f87aea5d	Manager	2026-03-17 05:28:19.555656+02	2026-03-17 05:28:19.555656+02
+7785aab7-e1b4-43c3-9bd0-9d1babd3f3e7	Coach	2026-03-17 05:28:19.555656+02	2026-03-17 05:28:19.555656+02
+11786351-2d6f-4172-a720-2eb4a17cfb2d	Player	2026-03-17 05:28:19.555656+02	2026-03-17 05:28:19.555656+02
+ea3eb922-902f-4be8-8995-b62e47621b7f	Medic	2026-03-17 05:28:19.555656+02	2026-03-17 05:28:19.555656+02
+753446a3-e225-4a9a-8c07-f45df9e49b6b	Analyst	2026-03-17 05:28:19.555656+02	2026-03-17 05:28:19.555656+02
+\.
+
+
+--
+-- TOC entry 5587 (class 0 OID 19007)
+-- Dependencies: 221
+-- Data for Name: season; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.season (season_id, label, start_date, end_date, is_current, created_at, updated_at) FROM stdin;
+\.
+
+
+--
+-- TOC entry 5593 (class 0 OID 19138)
+-- Dependencies: 227
+-- Data for Name: team; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.team (team_id, team_name, category_id, manager_user_id, deleted_at, created_at, updated_at) FROM stdin;
+\.
+
+
+--
+-- TOC entry 5588 (class 0 OID 19027)
+-- Dependencies: 222
+-- Data for Name: team_category; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.team_category (category_id, name, min_age, max_age, created_at, updated_at) FROM stdin;
+\.
+
+
+--
+-- TOC entry 5604 (class 0 OID 19473)
+-- Dependencies: 238
+-- Data for Name: team_game_stats; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.team_game_stats (report_id, match_id, season_id, analyst_staff_id, points_scored, points_conceded, total_rebounds, total_turnovers, total_fouls, total_assists, total_steals, total_blocks, total_fg_made, total_fg_attempted, total_three_made, total_ft_made, team_efficiency, created_at, updated_at) FROM stdin;
+\.
+
+
+--
+-- TOC entry 5595 (class 0 OID 19204)
+-- Dependencies: 229
+-- Data for Name: team_staff; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.team_staff (staff_id, user_id, team_id, staff_role, joined_date, left_date, is_current, created_at, updated_at) FROM stdin;
+\.
+
+
+--
+-- TOC entry 5601 (class 0 OID 19365)
+-- Dependencies: 235
+-- Data for Name: training_session; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.training_session (session_id, event_id, plan_id, conducted_by_staff_id, session_notes, created_at, updated_at) FROM stdin;
+\.
+
+
+--
+-- TOC entry 5591 (class 0 OID 19075)
+-- Dependencies: 225
+-- Data for Name: user_approval_request; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.user_approval_request (request_id, user_id, status, submitted_at, reviewed_by, reviewed_at, notes, created_at, updated_at) FROM stdin;
+2e588fbe-de64-47cc-9e6a-e1341dc24a47	918d9142-0af3-4339-ac83-2f1ab81d0c94	Approved	2026-03-17 22:15:31.995141+02	918d9142-0af3-4339-ac83-2f1ab81d0c94	2026-03-17 23:06:37.785202+02	Auto-approved for dev manager bootstrap.	2026-03-17 22:15:31.995141+02	2026-03-17 23:06:37.785202+02
+ff748295-1ab0-474c-84b6-3d900b4f4a6e	384f3123-accb-41ac-8cf1-ff222bd2013c	Approved	2026-03-17 22:08:11.244368+02	918d9142-0af3-4339-ac83-2f1ab81d0c94	2026-03-17 23:51:22.800201+02	\N	2026-03-17 22:08:11.244396+02	2026-03-17 23:51:22.833803+02
+0655b31e-391b-4eff-83e0-3a16d9d77e9a	8f7834c4-7156-4db1-8fe3-818ebd99051d	Rejected	2026-03-17 23:55:28.606896+02	918d9142-0af3-4339-ac83-2f1ab81d0c94	2026-03-17 23:56:07.057455+02	\N	2026-03-17 23:55:28.606896+02	2026-03-17 23:56:07.059604+02
+e05cce0f-97c1-425b-a72a-f83b13c2b01a	699c96b8-e52e-41ee-a06b-c0ea313caf32	Pending	2026-03-18 19:33:18.233463+02	\N	\N	\N	2026-03-18 19:33:18.233489+02	2026-03-18 19:33:18.233514+02
+\.
+
+
+--
+-- TOC entry 5592 (class 0 OID 19106)
+-- Dependencies: 226
+-- Data for Name: user_auth_provider; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.user_auth_provider (id, user_id, provider, provider_user_id, provider_identifier, password_hash, is_verified, created_at, updated_at) FROM stdin;
+785b3906-504b-4ee6-a37f-2edbf892788d	384f3123-accb-41ac-8cf1-ff222bd2013c	local	\N	\N	$2a$11$Y4yXCjAubcyOHPeWVp/AM.PV0JivYa9trE2YDw5iDMwU2tx4WQsmm	f	2026-03-17 22:08:11.194988+02	2026-03-17 22:08:11.195025+02
+e7bddfe1-7f28-4fe8-a7b7-6e82947fa23a	918d9142-0af3-4339-ac83-2f1ab81d0c94	local	\N	\N	$2a$11$7zIT2F3VhfGkInkmh0jiNO0UMgiwE5dz8eIZrSRCY.0hX0YOsoZ0.	f	2026-03-17 22:15:31.992382+02	2026-03-17 22:37:11.692559+02
+8cd0e623-a174-478d-bf8d-f7ea32b65e4f	8f7834c4-7156-4db1-8fe3-818ebd99051d	local	\N	\N	$2a$11$b5sBwZ8oiR8SFFQ3Lj0TA.R9/q5/TCYsVh6APoo7AcQ/7DkclpXQq	f	2026-03-17 23:55:28.602656+02	2026-03-17 23:55:28.602657+02
+21e5fd3f-0a01-490e-b827-5e58b4cc1bc4	d3c6c49a-3f98-45ff-93c4-17addd50b474	google	116050918301977324694	moroomedo98@gmail.com	\N	f	2026-03-18 19:16:53.729377+02	2026-03-18 19:16:53.729403+02
+1e14f02d-5df0-4f60-9a61-839ec6923ebd	699c96b8-e52e-41ee-a06b-c0ea313caf32	google	115229796851180265482	mrwanpablo46@gmail.com	\N	t	2026-03-18 19:31:56.988083+02	2026-03-18 19:33:18.269889+02
+\.
+
+
+--
+-- TOC entry 5594 (class 0 OID 19164)
+-- Dependencies: 228
+-- Data for Name: user_role; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.user_role (user_role_id, user_id, role_id, team_id, status, assigned_by, assigned_at, created_at, updated_at) FROM stdin;
+09646f45-ef39-4fcd-862d-42ee5fc781ec	918d9142-0af3-4339-ac83-2f1ab81d0c94	833a33d6-9846-4e8a-b7e2-a548f87aea5d	\N	Approved	918d9142-0af3-4339-ac83-2f1ab81d0c94	2026-03-17 23:06:37.785202+02	2026-03-17 23:06:37.785202+02	2026-03-17 23:06:37.785202+02
+\.
+
+
+--
+-- TOC entry 5590 (class 0 OID 19055)
+-- Dependencies: 224
+-- Data for Name: users; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.users (user_id, email, username, name, phone_number, dob, deleted_at, created_at, updated_at) FROM stdin;
+384f3123-accb-41ac-8cf1-ff222bd2013c	debug1346005207@test.com	debug1371245199	Debug User	+10000000000	1999-01-01	\N	2026-03-17 22:08:10.673677+02	2026-03-17 22:08:10.673703+02
+918d9142-0af3-4339-ac83-2f1ab81d0c94	omar.elsaid253@gmail.com	\N	عمر محمد السيد حسن	+201033117957	\N	\N	2026-03-17 22:15:31.568338+02	2026-03-17 22:15:31.568339+02
+8f7834c4-7156-4db1-8fe3-818ebd99051d	omar1233@test.com	\N	test deny	\N	\N	\N	2026-03-17 23:55:28.410678+02	2026-03-17 23:55:28.410679+02
+d3c6c49a-3f98-45ff-93c4-17addd50b474	moroomedo98@gmail.com	\N	Omar Mohamed	\N	\N	\N	2026-03-18 19:16:53.631788+02	2026-03-18 19:16:53.63182+02
+699c96b8-e52e-41ee-a06b-c0ea313caf32	mrwanpablo46@gmail.com	\N	Marwan pablo	\N	2009-06-10	\N	2026-03-18 19:31:56.976882+02	2026-03-18 19:33:18.269889+02
+\.
+
+
+--
+-- TOC entry 5304 (class 2606 OID 19654)
+-- Name: ai_lineup_suggestion ai_lineup_suggestion_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.ai_lineup_suggestion
+    ADD CONSTRAINT ai_lineup_suggestion_pkey PRIMARY KEY (suggestion_id);
+
+
+--
+-- TOC entry 5336 (class 2606 OID 19851)
+-- Name: announcement announcement_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.announcement
+    ADD CONSTRAINT announcement_pkey PRIMARY KEY (announcement_id);
+
+
+--
+-- TOC entry 5339 (class 2606 OID 19875)
+-- Name: announcement_read announcement_read_announcement_id_user_id_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.announcement_read
+    ADD CONSTRAINT announcement_read_announcement_id_user_id_key UNIQUE (announcement_id, user_id);
+
+
+--
+-- TOC entry 5341 (class 2606 OID 19873)
+-- Name: announcement_read announcement_read_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.announcement_read
+    ADD CONSTRAINT announcement_read_pkey PRIMARY KEY (id);
+
+
+--
+-- TOC entry 5278 (class 2606 OID 19412)
+-- Name: attendance attendance_event_id_player_id_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.attendance
+    ADD CONSTRAINT attendance_event_id_player_id_key UNIQUE (event_id, player_id);
+
+
+--
+-- TOC entry 5280 (class 2606 OID 19410)
+-- Name: attendance attendance_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.attendance
+    ADD CONSTRAINT attendance_pkey PRIMARY KEY (attendance_id);
+
+
+--
+-- TOC entry 5270 (class 2606 OID 19353)
+-- Name: coaching_plan coaching_plan_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.coaching_plan
+    ADD CONSTRAINT coaching_plan_pkey PRIMARY KEY (plan_id);
+
+
+--
+-- TOC entry 5321 (class 2606 OID 19772)
+-- Name: conversation_participant conversation_participant_conversation_id_user_id_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.conversation_participant
+    ADD CONSTRAINT conversation_participant_conversation_id_user_id_key UNIQUE (conversation_id, user_id);
+
+
+--
+-- TOC entry 5323 (class 2606 OID 19770)
+-- Name: conversation_participant conversation_participant_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.conversation_participant
+    ADD CONSTRAINT conversation_participant_pkey PRIMARY KEY (id);
+
+
+--
+-- TOC entry 5319 (class 2606 OID 19754)
+-- Name: conversation conversation_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.conversation
+    ADD CONSTRAINT conversation_pkey PRIMARY KEY (conversation_id);
+
+
+--
+-- TOC entry 5264 (class 2606 OID 19323)
+-- Name: event event_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.event
+    ADD CONSTRAINT event_pkey PRIMARY KEY (event_id);
+
+
+--
+-- TOC entry 5260 (class 2606 OID 19301)
+-- Name: file_attachment file_attachment_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.file_attachment
+    ADD CONSTRAINT file_attachment_pkey PRIMARY KEY (file_id);
+
+
+--
+-- TOC entry 5316 (class 2606 OID 19734)
+-- Name: fitness_record fitness_record_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.fitness_record
+    ADD CONSTRAINT fitness_record_pkey PRIMARY KEY (fitness_id);
+
+
+--
+-- TOC entry 5309 (class 2606 OID 19669)
+-- Name: lineup_player lineup_player_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.lineup_player
+    ADD CONSTRAINT lineup_player_pkey PRIMARY KEY (id);
+
+
+--
+-- TOC entry 5311 (class 2606 OID 19671)
+-- Name: lineup_player lineup_player_suggestion_id_player_id_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.lineup_player
+    ADD CONSTRAINT lineup_player_suggestion_id_player_id_key UNIQUE (suggestion_id, player_id);
+
+
+--
+-- TOC entry 5286 (class 2606 OID 19451)
+-- Name: match match_event_id_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.match
+    ADD CONSTRAINT match_event_id_key UNIQUE (event_id);
+
+
+--
+-- TOC entry 5288 (class 2606 OID 19449)
+-- Name: match match_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.match
+    ADD CONSTRAINT match_pkey PRIMARY KEY (match_id);
+
+
+--
+-- TOC entry 5314 (class 2606 OID 19699)
+-- Name: medical_record medical_record_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.medical_record
+    ADD CONSTRAINT medical_record_pkey PRIMARY KEY (record_id);
+
+
+--
+-- TOC entry 5328 (class 2606 OID 19797)
+-- Name: message message_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.message
+    ADD CONSTRAINT message_pkey PRIMARY KEY (message_id);
+
+
+--
+-- TOC entry 5332 (class 2606 OID 19822)
+-- Name: message_read message_read_message_id_user_id_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.message_read
+    ADD CONSTRAINT message_read_message_id_user_id_key UNIQUE (message_id, user_id);
+
+
+--
+-- TOC entry 5334 (class 2606 OID 19820)
+-- Name: message_read message_read_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.message_read
+    ADD CONSTRAINT message_read_pkey PRIMARY KEY (id);
+
+
+--
+-- TOC entry 5298 (class 2606 OID 19595)
+-- Name: player_game_stats player_game_stats_match_id_player_id_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.player_game_stats
+    ADD CONSTRAINT player_game_stats_match_id_player_id_key UNIQUE (match_id, player_id);
+
+
+--
+-- TOC entry 5300 (class 2606 OID 19593)
+-- Name: player_game_stats player_game_stats_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.player_game_stats
+    ADD CONSTRAINT player_game_stats_pkey PRIMARY KEY (game_stat_id);
+
+
+--
+-- TOC entry 5252 (class 2606 OID 19249)
+-- Name: player_profile player_profile_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.player_profile
+    ADD CONSTRAINT player_profile_pkey PRIMARY KEY (player_id);
+
+
+--
+-- TOC entry 5254 (class 2606 OID 19251)
+-- Name: player_profile player_profile_user_id_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.player_profile
+    ADD CONSTRAINT player_profile_user_id_key UNIQUE (user_id);
+
+
+--
+-- TOC entry 5258 (class 2606 OID 19275)
+-- Name: player_team player_team_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.player_team
+    ADD CONSTRAINT player_team_pkey PRIMARY KEY (id);
+
+
+--
+-- TOC entry 5347 (class 2606 OID 19925)
+-- Name: refresh_token_legacy_backup refresh_token_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.refresh_token_legacy_backup
+    ADD CONSTRAINT refresh_token_pkey PRIMARY KEY (token_id);
+
+
+--
+-- TOC entry 5352 (class 2606 OID 19959)
+-- Name: refresh_token refresh_token_pkey1; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.refresh_token
+    ADD CONSTRAINT refresh_token_pkey1 PRIMARY KEY (id);
+
+
+--
+-- TOC entry 5349 (class 2606 OID 19927)
+-- Name: refresh_token_legacy_backup refresh_token_token_hash_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.refresh_token_legacy_backup
+    ADD CONSTRAINT refresh_token_token_hash_key UNIQUE (token_hash);
+
+
+--
+-- TOC entry 5354 (class 2606 OID 19961)
+-- Name: refresh_token refresh_token_token_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.refresh_token
+    ADD CONSTRAINT refresh_token_token_key UNIQUE (token);
+
+
+--
+-- TOC entry 5211 (class 2606 OID 19052)
+-- Name: role role_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.role
+    ADD CONSTRAINT role_pkey PRIMARY KEY (role_id);
+
+
+--
+-- TOC entry 5213 (class 2606 OID 19054)
+-- Name: role role_role_name_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.role
+    ADD CONSTRAINT role_role_name_key UNIQUE (role_name);
+
+
+--
+-- TOC entry 5203 (class 2606 OID 19025)
+-- Name: season season_label_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.season
+    ADD CONSTRAINT season_label_key UNIQUE (label);
+
+
+--
+-- TOC entry 5205 (class 2606 OID 19023)
+-- Name: season season_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.season
+    ADD CONSTRAINT season_pkey PRIMARY KEY (season_id);
+
+
+--
+-- TOC entry 5207 (class 2606 OID 19040)
+-- Name: team_category team_category_name_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.team_category
+    ADD CONSTRAINT team_category_name_key UNIQUE (name);
+
+
+--
+-- TOC entry 5209 (class 2606 OID 19038)
+-- Name: team_category team_category_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.team_category
+    ADD CONSTRAINT team_category_pkey PRIMARY KEY (category_id);
+
+
+--
+-- TOC entry 5291 (class 2606 OID 19525)
+-- Name: team_game_stats team_game_stats_match_id_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.team_game_stats
+    ADD CONSTRAINT team_game_stats_match_id_key UNIQUE (match_id);
+
+
+--
+-- TOC entry 5293 (class 2606 OID 19523)
+-- Name: team_game_stats team_game_stats_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.team_game_stats
+    ADD CONSTRAINT team_game_stats_pkey PRIMARY KEY (report_id);
+
+
+--
+-- TOC entry 5237 (class 2606 OID 19150)
+-- Name: team team_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.team
+    ADD CONSTRAINT team_pkey PRIMARY KEY (team_id);
+
+
+--
+-- TOC entry 5249 (class 2606 OID 19222)
+-- Name: team_staff team_staff_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.team_staff
+    ADD CONSTRAINT team_staff_pkey PRIMARY KEY (staff_id);
+
+
+--
+-- TOC entry 5274 (class 2606 OID 19380)
+-- Name: training_session training_session_event_id_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.training_session
+    ADD CONSTRAINT training_session_event_id_key UNIQUE (event_id);
+
+
+--
+-- TOC entry 5276 (class 2606 OID 19378)
+-- Name: training_session training_session_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.training_session
+    ADD CONSTRAINT training_session_pkey PRIMARY KEY (session_id);
+
+
+--
+-- TOC entry 5224 (class 2606 OID 19092)
+-- Name: user_approval_request user_approval_request_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.user_approval_request
+    ADD CONSTRAINT user_approval_request_pkey PRIMARY KEY (request_id);
+
+
+--
+-- TOC entry 5231 (class 2606 OID 19125)
+-- Name: user_auth_provider user_auth_provider_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.user_auth_provider
+    ADD CONSTRAINT user_auth_provider_pkey PRIMARY KEY (id);
+
+
+--
+-- TOC entry 5233 (class 2606 OID 19127)
+-- Name: user_auth_provider user_auth_provider_provider_provider_user_id_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.user_auth_provider
+    ADD CONSTRAINT user_auth_provider_provider_provider_user_id_key UNIQUE (provider, provider_user_id);
+
+
+--
+-- TOC entry 5245 (class 2606 OID 19178)
+-- Name: user_role user_role_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.user_role
+    ADD CONSTRAINT user_role_pkey PRIMARY KEY (user_role_id);
+
+
+--
+-- TOC entry 5219 (class 2606 OID 19070)
+-- Name: users users_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.users
+    ADD CONSTRAINT users_pkey PRIMARY KEY (user_id);
+
+
+--
+-- TOC entry 5305 (class 1259 OID 19660)
+-- Name: idx_ai_match; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_ai_match ON public.ai_lineup_suggestion USING btree (match_id);
+
+
+--
+-- TOC entry 5342 (class 1259 OID 19886)
+-- Name: idx_announcement_read_user; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_announcement_read_user ON public.announcement_read USING btree (user_id);
+
+
+--
+-- TOC entry 5337 (class 1259 OID 19862)
+-- Name: idx_announcement_team; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_announcement_team ON public.announcement USING btree (team_id);
+
+
+--
+-- TOC entry 5220 (class 1259 OID 19104)
+-- Name: idx_approval_status; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_approval_status ON public.user_approval_request USING btree (status);
+
+
+--
+-- TOC entry 5221 (class 1259 OID 19103)
+-- Name: idx_approval_user; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_approval_user ON public.user_approval_request USING btree (user_id);
+
+
+--
+-- TOC entry 5281 (class 1259 OID 19428)
+-- Name: idx_attendance_event; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_attendance_event ON public.attendance USING btree (event_id);
+
+
+--
+-- TOC entry 5282 (class 1259 OID 19429)
+-- Name: idx_attendance_player; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_attendance_player ON public.attendance USING btree (player_id);
+
+
+--
+-- TOC entry 5225 (class 1259 OID 19134)
+-- Name: idx_auth_provider; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_auth_provider ON public.user_auth_provider USING btree (provider, provider_user_id);
+
+
+--
+-- TOC entry 5226 (class 1259 OID 19133)
+-- Name: idx_auth_user; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_auth_user ON public.user_auth_provider USING btree (user_id);
+
+
+--
+-- TOC entry 5271 (class 1259 OID 19364)
+-- Name: idx_coaching_plan_team; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_coaching_plan_team ON public.coaching_plan USING btree (team_id);
+
+
+--
+-- TOC entry 5324 (class 1259 OID 19783)
+-- Name: idx_conv_participant_user; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_conv_participant_user ON public.conversation_participant USING btree (user_id);
+
+
+--
+-- TOC entry 5265 (class 1259 OID 19336)
+-- Name: idx_event_date; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_event_date ON public.event USING btree (event_date);
+
+
+--
+-- TOC entry 5266 (class 1259 OID 19335)
+-- Name: idx_event_season; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_event_season ON public.event USING btree (season_id);
+
+
+--
+-- TOC entry 5267 (class 1259 OID 19334)
+-- Name: idx_event_team; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_event_team ON public.event USING btree (team_id);
+
+
+--
+-- TOC entry 5268 (class 1259 OID 19337)
+-- Name: idx_event_team_date; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_event_team_date ON public.event USING btree (team_id, event_date);
+
+
+--
+-- TOC entry 5261 (class 1259 OID 19307)
+-- Name: idx_file_entity; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_file_entity ON public.file_attachment USING btree (entity_type, entity_id);
+
+
+--
+-- TOC entry 5262 (class 1259 OID 19308)
+-- Name: idx_file_uploader; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_file_uploader ON public.file_attachment USING btree (uploader_id);
+
+
+--
+-- TOC entry 5317 (class 1259 OID 19745)
+-- Name: idx_fitness_player; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_fitness_player ON public.fitness_record USING btree (player_id);
+
+
+--
+-- TOC entry 5306 (class 1259 OID 19683)
+-- Name: idx_lineup_player; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_lineup_player ON public.lineup_player USING btree (player_id);
+
+
+--
+-- TOC entry 5307 (class 1259 OID 19682)
+-- Name: idx_lineup_suggestion; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_lineup_suggestion ON public.lineup_player USING btree (suggestion_id);
+
+
+--
+-- TOC entry 5283 (class 1259 OID 19468)
+-- Name: idx_match_event; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_match_event ON public.match USING btree (event_id);
+
+
+--
+-- TOC entry 5284 (class 1259 OID 19467)
+-- Name: idx_match_season; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_match_season ON public.match USING btree (season_id);
+
+
+--
+-- TOC entry 5312 (class 1259 OID 19720)
+-- Name: idx_medical_player; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_medical_player ON public.medical_record USING btree (player_id);
+
+
+--
+-- TOC entry 5325 (class 1259 OID 19808)
+-- Name: idx_message_conversation_time; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_message_conversation_time ON public.message USING btree (conversation_id, sent_at DESC);
+
+
+--
+-- TOC entry 5329 (class 1259 OID 19834)
+-- Name: idx_message_read_message; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_message_read_message ON public.message_read USING btree (message_id);
+
+
+--
+-- TOC entry 5330 (class 1259 OID 19833)
+-- Name: idx_message_read_user; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_message_read_user ON public.message_read USING btree (user_id);
+
+
+--
+-- TOC entry 5326 (class 1259 OID 19809)
+-- Name: idx_message_sender; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_message_sender ON public.message USING btree (sender_user_id);
+
+
+--
+-- TOC entry 5301 (class 1259 OID 19626)
+-- Name: idx_pcs_player_season; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX idx_pcs_player_season ON public.player_cumulative_stats USING btree (player_id, season_id);
+
+
+--
+-- TOC entry 5294 (class 1259 OID 19612)
+-- Name: idx_pgs_match; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_pgs_match ON public.player_game_stats USING btree (match_id);
+
+
+--
+-- TOC entry 5295 (class 1259 OID 19611)
+-- Name: idx_pgs_player; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_pgs_player ON public.player_game_stats USING btree (player_id);
+
+
+--
+-- TOC entry 5296 (class 1259 OID 19613)
+-- Name: idx_pgs_season; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_pgs_season ON public.player_game_stats USING btree (season_id);
+
+
+--
+-- TOC entry 5255 (class 1259 OID 19286)
+-- Name: idx_player_team_current; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX idx_player_team_current ON public.player_team USING btree (player_id) WHERE (is_current = true);
+
+
+--
+-- TOC entry 5256 (class 1259 OID 19287)
+-- Name: idx_player_team_team; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_player_team_team ON public.player_team USING btree (team_id);
+
+
+--
+-- TOC entry 5343 (class 1259 OID 19940)
+-- Name: idx_refresh_token_expires; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_refresh_token_expires ON public.refresh_token_legacy_backup USING btree (expires_at);
+
+
+--
+-- TOC entry 5344 (class 1259 OID 19938)
+-- Name: idx_refresh_token_hash; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_refresh_token_hash ON public.refresh_token_legacy_backup USING btree (token_hash) WHERE (revoked_at IS NULL);
+
+
+--
+-- TOC entry 5350 (class 1259 OID 19967)
+-- Name: idx_refresh_token_token; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_refresh_token_token ON public.refresh_token USING btree (token);
+
+
+--
+-- TOC entry 5345 (class 1259 OID 19939)
+-- Name: idx_refresh_token_user; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_refresh_token_user ON public.refresh_token_legacy_backup USING btree (user_id) WHERE (revoked_at IS NULL);
+
+
+--
+-- TOC entry 5201 (class 1259 OID 19026)
+-- Name: idx_season_one_current; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX idx_season_one_current ON public.season USING btree (is_current) WHERE (is_current = true);
+
+
+--
+-- TOC entry 5302 (class 1259 OID 19639)
+-- Name: idx_tcs_team_season; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX idx_tcs_team_season ON public.team_cumulative_stats USING btree (team_id, season_id);
+
+
+--
+-- TOC entry 5234 (class 1259 OID 19163)
+-- Name: idx_team_category; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_team_category ON public.team USING btree (category_id);
+
+
+--
+-- TOC entry 5235 (class 1259 OID 19162)
+-- Name: idx_team_manager; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_team_manager ON public.team USING btree (manager_user_id);
+
+
+--
+-- TOC entry 5246 (class 1259 OID 19235)
+-- Name: idx_team_staff_team; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_team_staff_team ON public.team_staff USING btree (team_id);
+
+
+--
+-- TOC entry 5247 (class 1259 OID 19234)
+-- Name: idx_team_staff_user; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_team_staff_user ON public.team_staff USING btree (user_id);
+
+
+--
+-- TOC entry 5289 (class 1259 OID 19541)
+-- Name: idx_tgs_season; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_tgs_season ON public.team_game_stats USING btree (season_id);
+
+
+--
+-- TOC entry 5272 (class 1259 OID 19396)
+-- Name: idx_training_session_plan; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_training_session_plan ON public.training_session USING btree (plan_id);
+
+
+--
+-- TOC entry 5239 (class 1259 OID 19203)
+-- Name: idx_user_role_status; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_user_role_status ON public.user_role USING btree (status);
+
+
+--
+-- TOC entry 5240 (class 1259 OID 19202)
+-- Name: idx_user_role_team; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_user_role_team ON public.user_role USING btree (team_id);
+
+
+--
+-- TOC entry 5241 (class 1259 OID 19201)
+-- Name: idx_user_role_user; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_user_role_user ON public.user_role USING btree (user_id);
+
+
+--
+-- TOC entry 5214 (class 1259 OID 19073)
+-- Name: idx_users_email; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_users_email ON public.users USING btree (email);
+
+
+--
+-- TOC entry 5215 (class 1259 OID 19074)
+-- Name: idx_users_username; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_users_username ON public.users USING btree (username);
+
+
+--
+-- TOC entry 5227 (class 1259 OID 19135)
+-- Name: uq_auth_local_per_user; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX uq_auth_local_per_user ON public.user_auth_provider USING btree (user_id) WHERE (provider = 'local'::public.auth_provider_type);
+
+
+--
+-- TOC entry 5228 (class 1259 OID 19137)
+-- Name: uq_auth_magic_identifier; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX uq_auth_magic_identifier ON public.user_auth_provider USING btree (provider, provider_identifier) WHERE (provider = 'magic_link'::public.auth_provider_type);
+
+
+--
+-- TOC entry 5229 (class 1259 OID 19136)
+-- Name: uq_auth_phone_identifier; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX uq_auth_phone_identifier ON public.user_auth_provider USING btree (provider, provider_identifier) WHERE (provider = 'phone'::public.auth_provider_type);
+
+
+--
+-- TOC entry 5238 (class 1259 OID 19161)
+-- Name: uq_team_name_category; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX uq_team_name_category ON public.team USING btree (team_name, category_id) WHERE (deleted_at IS NULL);
+
+
+--
+-- TOC entry 5250 (class 1259 OID 19233)
+-- Name: uq_team_staff_current; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX uq_team_staff_current ON public.team_staff USING btree (user_id, team_id) WHERE (is_current = true);
+
+
+--
+-- TOC entry 5222 (class 1259 OID 19105)
+-- Name: uq_user_one_pending_approval; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX uq_user_one_pending_approval ON public.user_approval_request USING btree (user_id) WHERE (status = 'Pending'::public.approval_request_status);
+
+
+--
+-- TOC entry 5242 (class 1259 OID 19199)
+-- Name: uq_user_role_global; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX uq_user_role_global ON public.user_role USING btree (user_id, role_id) WHERE (team_id IS NULL);
+
+
+--
+-- TOC entry 5243 (class 1259 OID 19200)
+-- Name: uq_user_role_team; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX uq_user_role_team ON public.user_role USING btree (user_id, role_id, team_id) WHERE (team_id IS NOT NULL);
+
+
+--
+-- TOC entry 5216 (class 1259 OID 19071)
+-- Name: uq_users_email_active; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX uq_users_email_active ON public.users USING btree (email) WHERE (deleted_at IS NULL);
+
+
+--
+-- TOC entry 5217 (class 1259 OID 19072)
+-- Name: uq_users_username_active; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX uq_users_username_active ON public.users USING btree (username) WHERE (deleted_at IS NULL);
+
+
+--
+-- TOC entry 5429 (class 2620 OID 19470)
+-- Name: match trg_match_event_type; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER trg_match_event_type BEFORE INSERT OR UPDATE ON public.match FOR EACH ROW EXECUTE FUNCTION public.check_event_type_is_match();
+
+
+--
+-- TOC entry 5430 (class 2620 OID 19472)
+-- Name: match trg_match_result_consistency; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER trg_match_result_consistency BEFORE INSERT OR UPDATE ON public.match FOR EACH ROW EXECUTE FUNCTION public.check_match_result_vs_scores();
+
+
+--
+-- TOC entry 5422 (class 2620 OID 19258)
+-- Name: player_profile trg_player_role_check; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER trg_player_role_check BEFORE INSERT ON public.player_profile FOR EACH ROW EXECUTE FUNCTION public.check_player_has_role();
+
+
+--
+-- TOC entry 5420 (class 2620 OID 19237)
+-- Name: team_staff trg_staff_role_check; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER trg_staff_role_check BEFORE INSERT OR UPDATE ON public.team_staff FOR EACH ROW EXECUTE FUNCTION public.check_staff_has_role();
+
+
+--
+-- TOC entry 5434 (class 2620 OID 19906)
+-- Name: ai_lineup_suggestion trg_updated_at; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER trg_updated_at BEFORE UPDATE ON public.ai_lineup_suggestion FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+
+
+--
+-- TOC entry 5437 (class 2620 OID 19909)
+-- Name: announcement trg_updated_at; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER trg_updated_at BEFORE UPDATE ON public.announcement FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+
+
+--
+-- TOC entry 5428 (class 2620 OID 19902)
+-- Name: attendance trg_updated_at; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER trg_updated_at BEFORE UPDATE ON public.attendance FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+
+
+--
+-- TOC entry 5426 (class 2620 OID 19900)
+-- Name: coaching_plan trg_updated_at; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER trg_updated_at BEFORE UPDATE ON public.coaching_plan FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+
+
+--
+-- TOC entry 5425 (class 2620 OID 19899)
+-- Name: event trg_updated_at; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER trg_updated_at BEFORE UPDATE ON public.event FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+
+
+--
+-- TOC entry 5436 (class 2620 OID 19908)
+-- Name: fitness_record trg_updated_at; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER trg_updated_at BEFORE UPDATE ON public.fitness_record FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+
+
+--
+-- TOC entry 5431 (class 2620 OID 19903)
+-- Name: match trg_updated_at; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER trg_updated_at BEFORE UPDATE ON public.match FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+
+
+--
+-- TOC entry 5435 (class 2620 OID 19907)
+-- Name: medical_record trg_updated_at; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER trg_updated_at BEFORE UPDATE ON public.medical_record FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+
+
+--
+-- TOC entry 5433 (class 2620 OID 19905)
+-- Name: player_game_stats trg_updated_at; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER trg_updated_at BEFORE UPDATE ON public.player_game_stats FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+
+
+--
+-- TOC entry 5423 (class 2620 OID 19897)
+-- Name: player_profile trg_updated_at; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER trg_updated_at BEFORE UPDATE ON public.player_profile FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+
+
+--
+-- TOC entry 5424 (class 2620 OID 19898)
+-- Name: player_team trg_updated_at; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER trg_updated_at BEFORE UPDATE ON public.player_team FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+
+
+--
+-- TOC entry 5414 (class 2620 OID 19890)
+-- Name: role trg_updated_at; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER trg_updated_at BEFORE UPDATE ON public.role FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+
+
+--
+-- TOC entry 5412 (class 2620 OID 19888)
+-- Name: season trg_updated_at; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER trg_updated_at BEFORE UPDATE ON public.season FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+
+
+--
+-- TOC entry 5418 (class 2620 OID 19894)
+-- Name: team trg_updated_at; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER trg_updated_at BEFORE UPDATE ON public.team FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+
+
+--
+-- TOC entry 5413 (class 2620 OID 19889)
+-- Name: team_category trg_updated_at; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER trg_updated_at BEFORE UPDATE ON public.team_category FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+
+
+--
+-- TOC entry 5432 (class 2620 OID 19904)
+-- Name: team_game_stats trg_updated_at; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER trg_updated_at BEFORE UPDATE ON public.team_game_stats FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+
+
+--
+-- TOC entry 5421 (class 2620 OID 19896)
+-- Name: team_staff trg_updated_at; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER trg_updated_at BEFORE UPDATE ON public.team_staff FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+
+
+--
+-- TOC entry 5427 (class 2620 OID 19901)
+-- Name: training_session trg_updated_at; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER trg_updated_at BEFORE UPDATE ON public.training_session FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+
+
+--
+-- TOC entry 5416 (class 2620 OID 19893)
+-- Name: user_approval_request trg_updated_at; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER trg_updated_at BEFORE UPDATE ON public.user_approval_request FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+
+
+--
+-- TOC entry 5417 (class 2620 OID 19892)
+-- Name: user_auth_provider trg_updated_at; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER trg_updated_at BEFORE UPDATE ON public.user_auth_provider FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+
+
+--
+-- TOC entry 5419 (class 2620 OID 19895)
+-- Name: user_role trg_updated_at; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER trg_updated_at BEFORE UPDATE ON public.user_role FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+
+
+--
+-- TOC entry 5415 (class 2620 OID 19891)
+-- Name: users trg_updated_at; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER trg_updated_at BEFORE UPDATE ON public.users FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+
+
+--
+-- TOC entry 5389 (class 2606 OID 19655)
+-- Name: ai_lineup_suggestion ai_lineup_suggestion_match_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.ai_lineup_suggestion
+    ADD CONSTRAINT ai_lineup_suggestion_match_id_fkey FOREIGN KEY (match_id) REFERENCES public.match(match_id) ON DELETE CASCADE;
+
+
+--
+-- TOC entry 5405 (class 2606 OID 19857)
+-- Name: announcement announcement_creator_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.announcement
+    ADD CONSTRAINT announcement_creator_user_id_fkey FOREIGN KEY (creator_user_id) REFERENCES public.users(user_id) ON DELETE CASCADE;
+
+
+--
+-- TOC entry 5407 (class 2606 OID 19876)
+-- Name: announcement_read announcement_read_announcement_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.announcement_read
+    ADD CONSTRAINT announcement_read_announcement_id_fkey FOREIGN KEY (announcement_id) REFERENCES public.announcement(announcement_id) ON DELETE CASCADE;
+
+
+--
+-- TOC entry 5408 (class 2606 OID 19881)
+-- Name: announcement_read announcement_read_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.announcement_read
+    ADD CONSTRAINT announcement_read_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(user_id) ON DELETE CASCADE;
+
+
+--
+-- TOC entry 5406 (class 2606 OID 19852)
+-- Name: announcement announcement_team_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.announcement
+    ADD CONSTRAINT announcement_team_id_fkey FOREIGN KEY (team_id) REFERENCES public.team(team_id) ON DELETE CASCADE;
+
+
+--
+-- TOC entry 5377 (class 2606 OID 19413)
+-- Name: attendance attendance_event_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.attendance
+    ADD CONSTRAINT attendance_event_id_fkey FOREIGN KEY (event_id) REFERENCES public.event(event_id) ON DELETE CASCADE;
+
+
+--
+-- TOC entry 5378 (class 2606 OID 19418)
+-- Name: attendance attendance_player_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.attendance
+    ADD CONSTRAINT attendance_player_id_fkey FOREIGN KEY (player_id) REFERENCES public.player_profile(player_id) ON DELETE CASCADE;
+
+
+--
+-- TOC entry 5379 (class 2606 OID 19423)
+-- Name: attendance attendance_recorded_by_staff_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.attendance
+    ADD CONSTRAINT attendance_recorded_by_staff_id_fkey FOREIGN KEY (recorded_by_staff_id) REFERENCES public.team_staff(staff_id) ON DELETE SET NULL;
+
+
+--
+-- TOC entry 5372 (class 2606 OID 19354)
+-- Name: coaching_plan coaching_plan_creator_staff_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.coaching_plan
+    ADD CONSTRAINT coaching_plan_creator_staff_id_fkey FOREIGN KEY (creator_staff_id) REFERENCES public.team_staff(staff_id) ON DELETE CASCADE;
+
+
+--
+-- TOC entry 5373 (class 2606 OID 19359)
+-- Name: coaching_plan coaching_plan_team_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.coaching_plan
+    ADD CONSTRAINT coaching_plan_team_id_fkey FOREIGN KEY (team_id) REFERENCES public.team(team_id) ON DELETE CASCADE;
+
+
+--
+-- TOC entry 5399 (class 2606 OID 19773)
+-- Name: conversation_participant conversation_participant_conversation_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.conversation_participant
+    ADD CONSTRAINT conversation_participant_conversation_id_fkey FOREIGN KEY (conversation_id) REFERENCES public.conversation(conversation_id) ON DELETE CASCADE;
+
+
+--
+-- TOC entry 5400 (class 2606 OID 19778)
+-- Name: conversation_participant conversation_participant_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.conversation_participant
+    ADD CONSTRAINT conversation_participant_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(user_id) ON DELETE CASCADE;
+
+
+--
+-- TOC entry 5398 (class 2606 OID 19755)
+-- Name: conversation conversation_team_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.conversation
+    ADD CONSTRAINT conversation_team_id_fkey FOREIGN KEY (team_id) REFERENCES public.team(team_id) ON DELETE CASCADE;
+
+
+--
+-- TOC entry 5370 (class 2606 OID 19329)
+-- Name: event event_season_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.event
+    ADD CONSTRAINT event_season_id_fkey FOREIGN KEY (season_id) REFERENCES public.season(season_id);
+
+
+--
+-- TOC entry 5371 (class 2606 OID 19324)
+-- Name: event event_team_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.event
+    ADD CONSTRAINT event_team_id_fkey FOREIGN KEY (team_id) REFERENCES public.team(team_id) ON DELETE CASCADE;
+
+
+--
+-- TOC entry 5369 (class 2606 OID 19302)
+-- Name: file_attachment file_attachment_uploader_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.file_attachment
+    ADD CONSTRAINT file_attachment_uploader_id_fkey FOREIGN KEY (uploader_id) REFERENCES public.users(user_id) ON DELETE SET NULL;
+
+
+--
+-- TOC entry 5396 (class 2606 OID 19740)
+-- Name: fitness_record fitness_record_fitness_staff_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.fitness_record
+    ADD CONSTRAINT fitness_record_fitness_staff_id_fkey FOREIGN KEY (fitness_staff_id) REFERENCES public.team_staff(staff_id) ON DELETE SET NULL;
+
+
+--
+-- TOC entry 5397 (class 2606 OID 19735)
+-- Name: fitness_record fitness_record_player_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.fitness_record
+    ADD CONSTRAINT fitness_record_player_id_fkey FOREIGN KEY (player_id) REFERENCES public.player_profile(player_id) ON DELETE CASCADE;
+
+
+--
+-- TOC entry 5390 (class 2606 OID 19677)
+-- Name: lineup_player lineup_player_player_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.lineup_player
+    ADD CONSTRAINT lineup_player_player_id_fkey FOREIGN KEY (player_id) REFERENCES public.player_profile(player_id) ON DELETE CASCADE;
+
+
+--
+-- TOC entry 5391 (class 2606 OID 19672)
+-- Name: lineup_player lineup_player_suggestion_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.lineup_player
+    ADD CONSTRAINT lineup_player_suggestion_id_fkey FOREIGN KEY (suggestion_id) REFERENCES public.ai_lineup_suggestion(suggestion_id) ON DELETE CASCADE;
+
+
+--
+-- TOC entry 5380 (class 2606 OID 19452)
+-- Name: match match_event_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.match
+    ADD CONSTRAINT match_event_id_fkey FOREIGN KEY (event_id) REFERENCES public.event(event_id) ON DELETE CASCADE;
+
+
+--
+-- TOC entry 5381 (class 2606 OID 19462)
+-- Name: match match_score_keeper_staff_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.match
+    ADD CONSTRAINT match_score_keeper_staff_id_fkey FOREIGN KEY (score_keeper_staff_id) REFERENCES public.team_staff(staff_id) ON DELETE SET NULL;
+
+
+--
+-- TOC entry 5382 (class 2606 OID 19457)
+-- Name: match match_season_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.match
+    ADD CONSTRAINT match_season_id_fkey FOREIGN KEY (season_id) REFERENCES public.season(season_id);
+
+
+--
+-- TOC entry 5392 (class 2606 OID 19710)
+-- Name: medical_record medical_record_created_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.medical_record
+    ADD CONSTRAINT medical_record_created_by_fkey FOREIGN KEY (created_by) REFERENCES public.users(user_id) ON DELETE SET NULL;
+
+
+--
+-- TOC entry 5393 (class 2606 OID 19705)
+-- Name: medical_record medical_record_doctor_staff_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.medical_record
+    ADD CONSTRAINT medical_record_doctor_staff_id_fkey FOREIGN KEY (doctor_staff_id) REFERENCES public.team_staff(staff_id) ON DELETE SET NULL;
+
+
+--
+-- TOC entry 5394 (class 2606 OID 19700)
+-- Name: medical_record medical_record_player_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.medical_record
+    ADD CONSTRAINT medical_record_player_id_fkey FOREIGN KEY (player_id) REFERENCES public.player_profile(player_id) ON DELETE CASCADE;
+
+
+--
+-- TOC entry 5395 (class 2606 OID 19715)
+-- Name: medical_record medical_record_updated_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.medical_record
+    ADD CONSTRAINT medical_record_updated_by_fkey FOREIGN KEY (updated_by) REFERENCES public.users(user_id) ON DELETE SET NULL;
+
+
+--
+-- TOC entry 5401 (class 2606 OID 19798)
+-- Name: message message_conversation_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.message
+    ADD CONSTRAINT message_conversation_id_fkey FOREIGN KEY (conversation_id) REFERENCES public.conversation(conversation_id) ON DELETE CASCADE;
+
+
+--
+-- TOC entry 5403 (class 2606 OID 19823)
+-- Name: message_read message_read_message_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.message_read
+    ADD CONSTRAINT message_read_message_id_fkey FOREIGN KEY (message_id) REFERENCES public.message(message_id) ON DELETE CASCADE;
+
+
+--
+-- TOC entry 5404 (class 2606 OID 19828)
+-- Name: message_read message_read_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.message_read
+    ADD CONSTRAINT message_read_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(user_id) ON DELETE CASCADE;
+
+
+--
+-- TOC entry 5402 (class 2606 OID 19803)
+-- Name: message message_sender_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.message
+    ADD CONSTRAINT message_sender_user_id_fkey FOREIGN KEY (sender_user_id) REFERENCES public.users(user_id) ON DELETE CASCADE;
+
+
+--
+-- TOC entry 5386 (class 2606 OID 19596)
+-- Name: player_game_stats player_game_stats_match_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.player_game_stats
+    ADD CONSTRAINT player_game_stats_match_id_fkey FOREIGN KEY (match_id) REFERENCES public.match(match_id) ON DELETE CASCADE;
+
+
+--
+-- TOC entry 5387 (class 2606 OID 19601)
+-- Name: player_game_stats player_game_stats_player_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.player_game_stats
+    ADD CONSTRAINT player_game_stats_player_id_fkey FOREIGN KEY (player_id) REFERENCES public.player_profile(player_id) ON DELETE CASCADE;
+
+
+--
+-- TOC entry 5388 (class 2606 OID 19606)
+-- Name: player_game_stats player_game_stats_season_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.player_game_stats
+    ADD CONSTRAINT player_game_stats_season_id_fkey FOREIGN KEY (season_id) REFERENCES public.season(season_id);
+
+
+--
+-- TOC entry 5366 (class 2606 OID 19252)
+-- Name: player_profile player_profile_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.player_profile
+    ADD CONSTRAINT player_profile_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(user_id) ON DELETE CASCADE;
+
+
+--
+-- TOC entry 5367 (class 2606 OID 19276)
+-- Name: player_team player_team_player_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.player_team
+    ADD CONSTRAINT player_team_player_id_fkey FOREIGN KEY (player_id) REFERENCES public.player_profile(player_id) ON DELETE CASCADE;
+
+
+--
+-- TOC entry 5368 (class 2606 OID 19281)
+-- Name: player_team player_team_team_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.player_team
+    ADD CONSTRAINT player_team_team_id_fkey FOREIGN KEY (team_id) REFERENCES public.team(team_id) ON DELETE CASCADE;
+
+
+--
+-- TOC entry 5409 (class 2606 OID 19933)
+-- Name: refresh_token_legacy_backup refresh_token_auth_provider_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.refresh_token_legacy_backup
+    ADD CONSTRAINT refresh_token_auth_provider_id_fkey FOREIGN KEY (auth_provider_id) REFERENCES public.user_auth_provider(id) ON DELETE CASCADE;
+
+
+--
+-- TOC entry 5410 (class 2606 OID 19928)
+-- Name: refresh_token_legacy_backup refresh_token_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.refresh_token_legacy_backup
+    ADD CONSTRAINT refresh_token_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(user_id) ON DELETE CASCADE;
+
+
+--
+-- TOC entry 5411 (class 2606 OID 19962)
+-- Name: refresh_token refresh_token_user_id_fkey1; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.refresh_token
+    ADD CONSTRAINT refresh_token_user_id_fkey1 FOREIGN KEY (user_id) REFERENCES public.users(user_id) ON DELETE CASCADE;
+
+
+--
+-- TOC entry 5358 (class 2606 OID 19151)
+-- Name: team team_category_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.team
+    ADD CONSTRAINT team_category_id_fkey FOREIGN KEY (category_id) REFERENCES public.team_category(category_id);
+
+
+--
+-- TOC entry 5383 (class 2606 OID 19536)
+-- Name: team_game_stats team_game_stats_analyst_staff_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.team_game_stats
+    ADD CONSTRAINT team_game_stats_analyst_staff_id_fkey FOREIGN KEY (analyst_staff_id) REFERENCES public.team_staff(staff_id) ON DELETE SET NULL;
+
+
+--
+-- TOC entry 5384 (class 2606 OID 19526)
+-- Name: team_game_stats team_game_stats_match_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.team_game_stats
+    ADD CONSTRAINT team_game_stats_match_id_fkey FOREIGN KEY (match_id) REFERENCES public.match(match_id) ON DELETE CASCADE;
+
+
+--
+-- TOC entry 5385 (class 2606 OID 19531)
+-- Name: team_game_stats team_game_stats_season_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.team_game_stats
+    ADD CONSTRAINT team_game_stats_season_id_fkey FOREIGN KEY (season_id) REFERENCES public.season(season_id);
+
+
+--
+-- TOC entry 5359 (class 2606 OID 19156)
+-- Name: team team_manager_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.team
+    ADD CONSTRAINT team_manager_user_id_fkey FOREIGN KEY (manager_user_id) REFERENCES public.users(user_id) ON DELETE SET NULL;
+
+
+--
+-- TOC entry 5364 (class 2606 OID 19228)
+-- Name: team_staff team_staff_team_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.team_staff
+    ADD CONSTRAINT team_staff_team_id_fkey FOREIGN KEY (team_id) REFERENCES public.team(team_id) ON DELETE CASCADE;
+
+
+--
+-- TOC entry 5365 (class 2606 OID 19223)
+-- Name: team_staff team_staff_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.team_staff
+    ADD CONSTRAINT team_staff_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(user_id) ON DELETE CASCADE;
+
+
+--
+-- TOC entry 5374 (class 2606 OID 19391)
+-- Name: training_session training_session_conducted_by_staff_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.training_session
+    ADD CONSTRAINT training_session_conducted_by_staff_id_fkey FOREIGN KEY (conducted_by_staff_id) REFERENCES public.team_staff(staff_id) ON DELETE SET NULL;
+
+
+--
+-- TOC entry 5375 (class 2606 OID 19381)
+-- Name: training_session training_session_event_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.training_session
+    ADD CONSTRAINT training_session_event_id_fkey FOREIGN KEY (event_id) REFERENCES public.event(event_id) ON DELETE CASCADE;
+
+
+--
+-- TOC entry 5376 (class 2606 OID 19386)
+-- Name: training_session training_session_plan_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.training_session
+    ADD CONSTRAINT training_session_plan_id_fkey FOREIGN KEY (plan_id) REFERENCES public.coaching_plan(plan_id) ON DELETE SET NULL;
+
+
+--
+-- TOC entry 5355 (class 2606 OID 19098)
+-- Name: user_approval_request user_approval_request_reviewed_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.user_approval_request
+    ADD CONSTRAINT user_approval_request_reviewed_by_fkey FOREIGN KEY (reviewed_by) REFERENCES public.users(user_id) ON DELETE SET NULL;
+
+
+--
+-- TOC entry 5356 (class 2606 OID 19093)
+-- Name: user_approval_request user_approval_request_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.user_approval_request
+    ADD CONSTRAINT user_approval_request_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(user_id) ON DELETE CASCADE;
+
+
+--
+-- TOC entry 5357 (class 2606 OID 19128)
+-- Name: user_auth_provider user_auth_provider_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.user_auth_provider
+    ADD CONSTRAINT user_auth_provider_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(user_id) ON DELETE CASCADE;
+
+
+--
+-- TOC entry 5360 (class 2606 OID 19194)
+-- Name: user_role user_role_assigned_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.user_role
+    ADD CONSTRAINT user_role_assigned_by_fkey FOREIGN KEY (assigned_by) REFERENCES public.users(user_id) ON DELETE SET NULL;
+
+
+--
+-- TOC entry 5361 (class 2606 OID 19184)
+-- Name: user_role user_role_role_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.user_role
+    ADD CONSTRAINT user_role_role_id_fkey FOREIGN KEY (role_id) REFERENCES public.role(role_id);
+
+
+--
+-- TOC entry 5362 (class 2606 OID 19189)
+-- Name: user_role user_role_team_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.user_role
+    ADD CONSTRAINT user_role_team_id_fkey FOREIGN KEY (team_id) REFERENCES public.team(team_id) ON DELETE CASCADE;
+
+
+--
+-- TOC entry 5363 (class 2606 OID 19179)
+-- Name: user_role user_role_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.user_role
+    ADD CONSTRAINT user_role_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(user_id) ON DELETE CASCADE;
+
+
+--
+-- TOC entry 5606 (class 0 OID 19614)
+-- Dependencies: 240 5621
+-- Name: player_cumulative_stats; Type: MATERIALIZED VIEW DATA; Schema: public; Owner: postgres
+--
+
+REFRESH MATERIALIZED VIEW public.player_cumulative_stats;
+
+
+--
+-- TOC entry 5607 (class 0 OID 19627)
+-- Dependencies: 241 5621
+-- Name: team_cumulative_stats; Type: MATERIALIZED VIEW DATA; Schema: public; Owner: postgres
+--
+
+REFRESH MATERIALIZED VIEW public.team_cumulative_stats;
+
+
+-- Completed on 2026-03-18 23:24:15
+
+--
+-- PostgreSQL database dump complete
+--
+
+\unrestrict 1fui8qOFgf4DagCqJJSh3AKClkmFgniiR3mCk9Sffz4dUP7xrIvpR0sgzDQJ8DW

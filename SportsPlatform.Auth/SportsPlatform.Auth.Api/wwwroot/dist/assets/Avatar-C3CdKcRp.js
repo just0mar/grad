@@ -1,0 +1,1 @@
+import{j as a}from"./index-Dq1cCyKN.js";function m({src:s,alt:r,size:o="md",className:t=""}){const e={sm:"w-8 h-8",md:"w-12 h-12",lg:"w-16 h-16",xl:"w-20 h-20"};return a.jsx("img",{src:s||"/assets/clubicon.png",alt:r,className:`${e[o]} rounded-full object-cover bg-gray-200 ${t}`})}export{m as A};
