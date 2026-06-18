@@ -1,3 +1,0 @@
-﻿<Project>
-  <Import Project="..\build\SportsPlatform.Auth.Api.props" />
-</Project>

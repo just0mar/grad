@@ -1,1 +1,0 @@
-import{j as a}from"./index-MVC4-aGN.js";import{p as n}from"./variants-CCMWAGJ_.js";import{m as r}from"./proxy-CSQQl6Cx.js";function e({children:i,className:t=""}){return a.jsx(r.div,{variants:n,initial:"initial",animate:"animate",exit:"exit",className:t,children:i})}export{e as P};

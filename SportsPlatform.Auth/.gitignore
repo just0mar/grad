@@ -1,4 +1,0 @@
-**/.env
-!**/.env.example
-**/appsettings.Local.json
-SportsPlatform.Auth.Api/scripts/prediction_service/data/
