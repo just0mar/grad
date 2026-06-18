@@ -1,0 +1,6 @@
+@SportsPlatform.Auth.Api_HostAddress = http://localhost:5122
+
+GET {{SportsPlatform.Auth.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

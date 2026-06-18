@@ -1,0 +1,1 @@
+import{j as a}from"./index-Dq1cCyKN.js";import{p as n}from"./variants-CCMWAGJ_.js";import{m as r}from"./proxy-_xdLWi0x.js";function e({children:i,className:t=""}){return a.jsx(r.div,{variants:n,initial:"initial",animate:"animate",exit:"exit",className:t,children:i})}export{e as P};

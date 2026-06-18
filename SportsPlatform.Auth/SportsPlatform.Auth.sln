@@ -1,0 +1,34 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SportsPlatform.Auth.Api", "SportsPlatform.Auth.Api\SportsPlatform.Auth.Api.csproj", "{51B2B89D-635B-430D-9484-E8A11AD24E88}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SportsPlatform.Auth.Core", "SportsPlatform.Auth.Core\SportsPlatform.Auth.Core.csproj", "{B8473BF6-829B-475B-B770-0608C5E0AC88}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SportsPlatform.Auth.Infrastructure", "SportsPlatform.Auth.Infrastructure\SportsPlatform.Auth.Infrastructure.csproj", "{9D50C4FF-0AAC-448E-967F-BB309D3F445D}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{51B2B89D-635B-430D-9484-E8A11AD24E88}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{51B2B89D-635B-430D-9484-E8A11AD24E88}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{51B2B89D-635B-430D-9484-E8A11AD24E88}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{51B2B89D-635B-430D-9484-E8A11AD24E88}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B8473BF6-829B-475B-B770-0608C5E0AC88}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B8473BF6-829B-475B-B770-0608C5E0AC88}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B8473BF6-829B-475B-B770-0608C5E0AC88}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B8473BF6-829B-475B-B770-0608C5E0AC88}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9D50C4FF-0AAC-448E-967F-BB309D3F445D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9D50C4FF-0AAC-448E-967F-BB309D3F445D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9D50C4FF-0AAC-448E-967F-BB309D3F445D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9D50C4FF-0AAC-448E-967F-BB309D3F445D}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

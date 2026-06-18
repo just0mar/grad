@@ -1,0 +1,60 @@
+# Phase 5 scale-out topology: Redis broker + API + background worker(s).
+#
+#   docker compose up --build                 # 1 api, 1 worker, 1 redis
+#   docker compose up --scale fiba-chatbot-worker=4   # more worker capacity
+#
+# The API enqueues ingest/retrain jobs onto Redis (QUEUE_BACKEND=celery); workers drain
+# them. Jobs for the SAME team are serialized by a per-team Redis lock; different teams
+# run in parallel across the worker pool. The read cache + team version stamps live in
+# Redis (CACHE_BACKEND=redis) so every container stays coherent.
+#
+# To run single-instance without Redis, drop QUEUE_BACKEND/CACHE_BACKEND (or set
+# QUEUE_BACKEND=inprocess) and the code falls back to in-process queue + cache.
+services:
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
+  fiba-chatbot-api:
+    build: .
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      QUEUE_BACKEND: celery
+      CACHE_BACKEND: redis
+      REDIS_URL: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/1
+    volumes:
+      - ./data:/app/data
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  fiba-chatbot-worker:
+    build: .
+    command: celery -A worker.celery_app worker --loglevel=info --concurrency=4
+    env_file:
+      - .env
+    environment:
+      QUEUE_BACKEND: celery
+      CACHE_BACKEND: redis
+      REDIS_URL: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/1
+    volumes:
+      - ./data:/app/data
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped

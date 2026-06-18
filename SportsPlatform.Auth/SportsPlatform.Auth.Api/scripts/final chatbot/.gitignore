@@ -1,0 +1,17 @@
+.env
+.env.*
+!.env.example
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+streamlit.log
+streamlit.err.log
+data/projects/
+data/chat_history.db
+extracted/chroma_pdf_index/
+extracted/chroma_chat_memory/
+

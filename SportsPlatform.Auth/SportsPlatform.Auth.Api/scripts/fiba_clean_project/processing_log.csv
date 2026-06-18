@@ -1,0 +1,21 @@
+file,page,table_index,status,candidate_tables_detected,message
+C:\Users\Acer\Desktop\data\FIBA Box Score EGY vs ANG 28 February.pdf,1,n/a,extracted_successfully,2,Parsed with text fallback extractor
+C:\Users\Acer\Desktop\data\FIBA Box Score MLI vs EGY 26 February.pdf,1,n/a,extracted_successfully,2,Parsed with text fallback extractor
+C:\Users\Acer\Desktop\data\FIBA Box Score UGA vs EGY 01 March.pdf,1,n/a,extracted_successfully,2,Parsed with text fallback extractor
+C:\Users\Acer\Desktop\data\Line Up Analysis EGY vs ANG 28 February.pdf,all,n/a,extracted_successfully,1,Lineup Analysis PDF parsed successfully
+C:\Users\Acer\Desktop\data\Line Up Analysis MLI vs EGY 26 February.pdf,all,n/a,extracted_successfully,1,Lineup Analysis PDF parsed successfully
+C:\Users\Acer\Desktop\data\Line Up Analysis UGA vs EGY 01 March.pdf,all,n/a,extracted_successfully,1,Lineup Analysis PDF parsed successfully
+C:\Users\Acer\Desktop\data\Play by Play EGY vs ANG 28 February.pdf,all,n/a,extracted_successfully,1,Play-by-Play PDF parsed successfully
+C:\Users\Acer\Desktop\data\Play by Play MLI vs EGY 26 February.pdf,all,n/a,extracted_successfully,1,Play-by-Play PDF parsed successfully
+C:\Users\Acer\Desktop\data\Play by Play UGA vs EGY 01 March.pdf,all,n/a,extracted_successfully,1,Play-by-Play PDF parsed successfully
+C:\Users\Acer\Desktop\data\Player PlusMinus Summary EGY vs ANG 28 February.pdf,all,n/a,extracted_successfully,1,PlusMinus PDF parsed successfully
+C:\Users\Acer\Desktop\data\Player PlusMinus Summary MLI vs EGY 26 February.pdf,all,n/a,extracted_successfully,1,PlusMinus PDF parsed successfully
+C:\Users\Acer\Desktop\data\Player PlusMinus Summary UGA vs EGY 01 March.pdf,all,n/a,extracted_successfully,1,PlusMinus PDF parsed successfully
+C:\Users\Acer\Desktop\data\Rotations Summary EGY vs ANG 28 February.pdf,n/a,n/a,skipped,0,Skipped unrecognized PDF type
+C:\Users\Acer\Desktop\data\Rotations Summary UGA vs EGY 01 March.pdf,n/a,n/a,skipped,0,Skipped unrecognized PDF type
+C:\Users\Acer\Desktop\data\Shot Areas EGY vs ANG 28 February.pdf,n/a,n/a,skipped,0,Skipped unrecognized PDF type
+C:\Users\Acer\Desktop\data\Shot Areas MLI vs EGY 26 February.pdf,n/a,n/a,skipped,0,Skipped unrecognized PDF type
+C:\Users\Acer\Desktop\data\Shot Areas UGA vs EGY 01 March.pdf,n/a,n/a,skipped,0,Skipped unrecognized PDF type
+C:\Users\Acer\Desktop\data\Shot Chart EGY vs ANG 28 February.pdf,n/a,n/a,skipped,0,Skipped unrecognized PDF type
+C:\Users\Acer\Desktop\data\Shot Chart MLI vs EGY 26 February.pdf,n/a,n/a,skipped,0,Skipped unrecognized PDF type
+C:\Users\Acer\Desktop\data\Shot Chart UGA vs EGY 01 March.pdf,n/a,n/a,skipped,0,Skipped unrecognized PDF type
