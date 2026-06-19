@@ -116,6 +116,14 @@ builder.Services.AddAuthentication(options =>
 // ── Authorization ───────────────────────────────────────────
 builder.Services.AddAuthorization();
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", policy =>
+    {
+        policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
+    });
+});
+
 // ── Services ────────────────────────────────────────────────
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IFileStorageService, LocalFileStorageService>();
@@ -235,6 +243,8 @@ if (distPath is not null && Directory.Exists(distPath))
     });
 }
 
+app.UseRouting();
+app.UseCors("AllowAll");
 app.UseAuthentication();
 app.UseMiddleware<RlsMiddleware>();
 app.UseAuthorization();

@@ -1,1 +1,0 @@
-import{p as e}from"./index-Dq1cCyKN.js";const o=async(n,t)=>{const{data:a}=await e.get(`/clubs/${n}/teams/${t}/announcements`);return a},m=async(n,t,a)=>{const{data:s}=await e.post(`/clubs/${n}/teams/${t}/announcements`,a);return s};export{m as c,o as g};

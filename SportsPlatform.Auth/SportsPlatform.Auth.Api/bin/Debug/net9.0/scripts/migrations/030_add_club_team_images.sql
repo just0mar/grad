@@ -1,5 +1,0 @@
-ALTER TABLE public.club
-    ADD COLUMN IF NOT EXISTS logo_url VARCHAR(500);
-
-ALTER TABLE public.team
-    ADD COLUMN IF NOT EXISTS image_url VARCHAR(500);

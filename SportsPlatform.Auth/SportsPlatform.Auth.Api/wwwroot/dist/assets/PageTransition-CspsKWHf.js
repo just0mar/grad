@@ -1,1 +1,0 @@
-import{j as a}from"./index-DTvEtyLk.js";import{p as n}from"./variants-CCMWAGJ_.js";import{m as r}from"./proxy-Cd12JFu4.js";function e({children:i,className:t=""}){return a.jsx(r.div,{variants:n,initial:"initial",animate:"animate",exit:"exit",className:t,children:i})}export{e as P};

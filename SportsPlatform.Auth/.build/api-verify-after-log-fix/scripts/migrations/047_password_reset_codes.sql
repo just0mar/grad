@@ -1,2 +1,0 @@
--- Password reset codes are intentionally not stored in the database.
--- This migration is kept as a no-op so migration ordering remains stable.

@@ -1,120 +1,13 @@
-C:\Users\Mega Store\.gemini\antigravity\scratch\SportsPlatform.Auth\SportsPlatform.Auth.Core\obj\Debug\net9.0\SportsPlatform.Auth.Core.csproj.AssemblyReference.cache
-C:\Users\Mega Store\.gemini\antigravity\scratch\SportsPlatform.Auth\SportsPlatform.Auth.Core\obj\Debug\net9.0\SportsPlatform.Auth.Core.GeneratedMSBuildEditorConfig.editorconfig
-C:\Users\Mega Store\.gemini\antigravity\scratch\SportsPlatform.Auth\SportsPlatform.Auth.Core\obj\Debug\net9.0\SportsPlatform.Auth.Core.AssemblyInfoInputs.cache
-C:\Users\Mega Store\.gemini\antigravity\scratch\SportsPlatform.Auth\SportsPlatform.Auth.Core\obj\Debug\net9.0\SportsPlatform.Auth.Core.AssemblyInfo.cs
-C:\Users\Mega Store\.gemini\antigravity\scratch\SportsPlatform.Auth\SportsPlatform.Auth.Core\obj\Debug\net9.0\SportsPlatform.Auth.Core.csproj.CoreCompileInputs.cache
-C:\Users\Mega Store\.gemini\antigravity\scratch\SportsPlatform.Auth\SportsPlatform.Auth.Core\bin\Debug\net9.0\SportsPlatform.Auth.Core.deps.json
-C:\Users\Mega Store\.gemini\antigravity\scratch\SportsPlatform.Auth\SportsPlatform.Auth.Core\bin\Debug\net9.0\SportsPlatform.Auth.Core.dll
-C:\Users\Mega Store\.gemini\antigravity\scratch\SportsPlatform.Auth\SportsPlatform.Auth.Core\bin\Debug\net9.0\SportsPlatform.Auth.Core.pdb
-C:\Users\Mega Store\.gemini\antigravity\scratch\SportsPlatform.Auth\SportsPlatform.Auth.Core\obj\Debug\net9.0\SportsPlatform.Auth.Core.dll
-C:\Users\Mega Store\.gemini\antigravity\scratch\SportsPlatform.Auth\SportsPlatform.Auth.Core\obj\Debug\net9.0\refint\SportsPlatform.Auth.Core.dll
-C:\Users\Mega Store\.gemini\antigravity\scratch\SportsPlatform.Auth\SportsPlatform.Auth.Core\obj\Debug\net9.0\SportsPlatform.Auth.Core.pdb
-C:\Users\Mega Store\.gemini\antigravity\scratch\SportsPlatform.Auth\SportsPlatform.Auth.Core\obj\Debug\net9.0\ref\SportsPlatform.Auth.Core.dll
-C:\Users\Mega Store\AndroidStudioProjects\SportsPlatform.Auth\SportsPlatform.Auth.Core\bin\Debug\net9.0\SportsPlatform.Auth.Core.deps.json
-C:\Users\Mega Store\AndroidStudioProjects\SportsPlatform.Auth\SportsPlatform.Auth.Core\bin\Debug\net9.0\SportsPlatform.Auth.Core.dll
-C:\Users\Mega Store\AndroidStudioProjects\SportsPlatform.Auth\SportsPlatform.Auth.Core\bin\Debug\net9.0\SportsPlatform.Auth.Core.pdb
-C:\Users\Mega Store\AndroidStudioProjects\SportsPlatform.Auth\SportsPlatform.Auth.Core\obj\Debug\net9.0\SportsPlatform.Auth.Core.csproj.AssemblyReference.cache
-C:\Users\Mega Store\AndroidStudioProjects\SportsPlatform.Auth\SportsPlatform.Auth.Core\obj\Debug\net9.0\SportsPlatform.Auth.Core.GeneratedMSBuildEditorConfig.editorconfig
-C:\Users\Mega Store\AndroidStudioProjects\SportsPlatform.Auth\SportsPlatform.Auth.Core\obj\Debug\net9.0\SportsPlatform.Auth.Core.AssemblyInfoInputs.cache
-C:\Users\Mega Store\AndroidStudioProjects\SportsPlatform.Auth\SportsPlatform.Auth.Core\obj\Debug\net9.0\SportsPlatform.Auth.Core.AssemblyInfo.cs
-C:\Users\Mega Store\AndroidStudioProjects\SportsPlatform.Auth\SportsPlatform.Auth.Core\obj\Debug\net9.0\SportsPlatform.Auth.Core.csproj.CoreCompileInputs.cache
-C:\Users\Mega Store\AndroidStudioProjects\SportsPlatform.Auth\SportsPlatform.Auth.Core\obj\Debug\net9.0\SportsPlatform.Auth.Core.dll
-C:\Users\Mega Store\AndroidStudioProjects\SportsPlatform.Auth\SportsPlatform.Auth.Core\obj\Debug\net9.0\refint\SportsPlatform.Auth.Core.dll
-C:\Users\Mega Store\AndroidStudioProjects\SportsPlatform.Auth\SportsPlatform.Auth.Core\obj\Debug\net9.0\SportsPlatform.Auth.Core.pdb
-C:\Users\Mega Store\AndroidStudioProjects\SportsPlatform.Auth\SportsPlatform.Auth.Core\obj\Debug\net9.0\ref\SportsPlatform.Auth.Core.dll
-C:\Users\Mega Store\AndroidStudioProjects\SportsPlatform.Auth\.build-verify\api\SportsPlatform.Auth.Core.deps.json
-C:\Users\Mega Store\AndroidStudioProjects\SportsPlatform.Auth\.build-verify\api\SportsPlatform.Auth.Core.dll
-C:\Users\Mega Store\AndroidStudioProjects\SportsPlatform.Auth\.build-verify\api\SportsPlatform.Auth.Core.pdb
-C:\Users\CodexSandboxOffline\.codex\.sandbox\cwd\f412528539aedfac\SportsPlatform.Auth.Core\bin\Debug\net9.0\SportsPlatform.Auth.Core.deps.json
-C:\Users\CodexSandboxOffline\.codex\.sandbox\cwd\f412528539aedfac\SportsPlatform.Auth.Core\bin\Debug\net9.0\SportsPlatform.Auth.Core.dll
-C:\Users\CodexSandboxOffline\.codex\.sandbox\cwd\f412528539aedfac\SportsPlatform.Auth.Core\bin\Debug\net9.0\SportsPlatform.Auth.Core.pdb
-C:\Users\CodexSandboxOffline\.codex\.sandbox\cwd\f412528539aedfac\SportsPlatform.Auth.Core\obj\Debug\net9.0\SportsPlatform.Auth.Core.csproj.AssemblyReference.cache
-C:\Users\CodexSandboxOffline\.codex\.sandbox\cwd\f412528539aedfac\SportsPlatform.Auth.Core\obj\Debug\net9.0\SportsPlatform.Auth.Core.GeneratedMSBuildEditorConfig.editorconfig
-C:\Users\CodexSandboxOffline\.codex\.sandbox\cwd\f412528539aedfac\SportsPlatform.Auth.Core\obj\Debug\net9.0\SportsPlatform.Auth.Core.AssemblyInfoInputs.cache
-C:\Users\CodexSandboxOffline\.codex\.sandbox\cwd\f412528539aedfac\SportsPlatform.Auth.Core\obj\Debug\net9.0\SportsPlatform.Auth.Core.AssemblyInfo.cs
-C:\Users\CodexSandboxOffline\.codex\.sandbox\cwd\f412528539aedfac\SportsPlatform.Auth.Core\obj\Debug\net9.0\SportsPlatform.Auth.Core.csproj.CoreCompileInputs.cache
-C:\Users\CodexSandboxOffline\.codex\.sandbox\cwd\f412528539aedfac\SportsPlatform.Auth.Core\obj\Debug\net9.0\SportsPlatform.Auth.Core.dll
-C:\Users\CodexSandboxOffline\.codex\.sandbox\cwd\f412528539aedfac\SportsPlatform.Auth.Core\obj\Debug\net9.0\refint\SportsPlatform.Auth.Core.dll
-C:\Users\CodexSandboxOffline\.codex\.sandbox\cwd\f412528539aedfac\SportsPlatform.Auth.Core\obj\Debug\net9.0\SportsPlatform.Auth.Core.pdb
-C:\Users\CodexSandboxOffline\.codex\.sandbox\cwd\f412528539aedfac\SportsPlatform.Auth.Core\obj\Debug\net9.0\ref\SportsPlatform.Auth.Core.dll
-C:\Users\Mega Store\AndroidStudioProjects\SportsPlatform.Auth\SportsPlatform.Auth.Core\bin\Verify\SportsPlatform.Auth.Core.deps.json
-C:\Users\Mega Store\AndroidStudioProjects\SportsPlatform.Auth\SportsPlatform.Auth.Core\bin\Verify\SportsPlatform.Auth.Core.dll
-C:\Users\Mega Store\AndroidStudioProjects\SportsPlatform.Auth\SportsPlatform.Auth.Core\bin\Verify\SportsPlatform.Auth.Core.pdb
-C:\Users\Mega Store\AndroidStudioProjects\SportsPlatform.Auth\SportsPlatform.Auth.Core\bin\VerifyOwnerTeams\SportsPlatform.Auth.Core.deps.json
-C:\Users\Mega Store\AndroidStudioProjects\SportsPlatform.Auth\SportsPlatform.Auth.Core\bin\VerifyOwnerTeams\SportsPlatform.Auth.Core.dll
-C:\Users\Mega Store\AndroidStudioProjects\SportsPlatform.Auth\SportsPlatform.Auth.Core\bin\VerifyOwnerTeams\SportsPlatform.Auth.Core.pdb
-C:\Users\Mega Store\AndroidStudioProjects\SportsPlatform.Auth\SportsPlatform.Auth.Core\bin\VerifyCoachFrontend\SportsPlatform.Auth.Core.deps.json
-C:\Users\Mega Store\AndroidStudioProjects\SportsPlatform.Auth\SportsPlatform.Auth.Core\bin\VerifyCoachFrontend\SportsPlatform.Auth.Core.dll
-C:\Users\Mega Store\AndroidStudioProjects\SportsPlatform.Auth\SportsPlatform.Auth.Core\bin\VerifyCoachFrontend\SportsPlatform.Auth.Core.pdb
-C:\Users\Mega Store\AndroidStudioProjects\SportsPlatform.Auth\SportsPlatform.Auth.Core\bin\VerifyCoachRoles\SportsPlatform.Auth.Core.deps.json
-C:\Users\Mega Store\AndroidStudioProjects\SportsPlatform.Auth\SportsPlatform.Auth.Core\bin\VerifyCoachRoles\SportsPlatform.Auth.Core.dll
-C:\Users\Mega Store\AndroidStudioProjects\SportsPlatform.Auth\SportsPlatform.Auth.Core\bin\VerifyCoachRoles\SportsPlatform.Auth.Core.pdb
-C:\Users\Mega Store\AndroidStudioProjects\SportsPlatform.Auth\SportsPlatform.Auth.Core\bin\VerifyPlanDraftEventDate\SportsPlatform.Auth.Core.deps.json
-C:\Users\Mega Store\AndroidStudioProjects\SportsPlatform.Auth\SportsPlatform.Auth.Core\bin\VerifyPlanDraftEventDate\SportsPlatform.Auth.Core.dll
-C:\Users\Mega Store\AndroidStudioProjects\SportsPlatform.Auth\SportsPlatform.Auth.Core\bin\VerifyPlanDraftEventDate\SportsPlatform.Auth.Core.pdb
-C:\Users\Mega Store\AndroidStudioProjects\SportsPlatform.Auth\SportsPlatform.Auth.Core\bin\VerifyAttendancePlayerProfile\SportsPlatform.Auth.Core.deps.json
-C:\Users\Mega Store\AndroidStudioProjects\SportsPlatform.Auth\SportsPlatform.Auth.Core\bin\VerifyAttendancePlayerProfile\SportsPlatform.Auth.Core.dll
-C:\Users\Mega Store\AndroidStudioProjects\SportsPlatform.Auth\SportsPlatform.Auth.Core\bin\VerifyAttendancePlayerProfile\SportsPlatform.Auth.Core.pdb
-C:\Users\Mega Store\AndroidStudioProjects\SportsPlatform.Auth\SportsPlatform.Auth.Core\bin\VerifyExcusedAttendance\SportsPlatform.Auth.Core.deps.json
-C:\Users\Mega Store\AndroidStudioProjects\SportsPlatform.Auth\SportsPlatform.Auth.Core\bin\VerifyExcusedAttendance\SportsPlatform.Auth.Core.dll
-C:\Users\Mega Store\AndroidStudioProjects\SportsPlatform.Auth\SportsPlatform.Auth.Core\bin\VerifyExcusedAttendance\SportsPlatform.Auth.Core.pdb
-C:\Users\Mega Store\AndroidStudioProjects\SportsPlatform.Auth\.build\sports-auth-api\SportsPlatform.Auth.Core.deps.json
-C:\Users\Mega Store\AndroidStudioProjects\SportsPlatform.Auth\.build\sports-auth-api\SportsPlatform.Auth.Core.dll
-C:\Users\Mega Store\AndroidStudioProjects\SportsPlatform.Auth\.build\sports-auth-api\SportsPlatform.Auth.Core.pdb
-C:\Users\Mega Store\AndroidStudioProjects\SportsPlatform.Auth\.build_check\spauth-build\SportsPlatform.Auth.Core.deps.json
-C:\Users\Mega Store\AndroidStudioProjects\SportsPlatform.Auth\.build_check\spauth-build\SportsPlatform.Auth.Core.dll
-C:\Users\Mega Store\AndroidStudioProjects\SportsPlatform.Auth\.build_check\spauth-build\SportsPlatform.Auth.Core.pdb
-C:\Users\Mega Store\AndroidStudioProjects\SportsPlatform.Auth\.build_check\spauth-build2\SportsPlatform.Auth.Core.deps.json
-C:\Users\Mega Store\AndroidStudioProjects\SportsPlatform.Auth\.build_check\spauth-build2\SportsPlatform.Auth.Core.dll
-C:\Users\Mega Store\AndroidStudioProjects\SportsPlatform.Auth\.build_check\spauth-build2\SportsPlatform.Auth.Core.pdb
-C:\tmp\sports-auth-build\SportsPlatform.Auth.Core.deps.json
-C:\tmp\sports-auth-build\SportsPlatform.Auth.Core.dll
-C:\tmp\sports-auth-build\SportsPlatform.Auth.Core.pdb
-C:\Users\Mega Store\AndroidStudioProjects\SportsPlatform.Auth\.build\spauth-api\SportsPlatform.Auth.Core.deps.json
-C:\Users\Mega Store\AndroidStudioProjects\SportsPlatform.Auth\.build\spauth-api\SportsPlatform.Auth.Core.dll
-C:\Users\Mega Store\AndroidStudioProjects\SportsPlatform.Auth\.build\spauth-api\SportsPlatform.Auth.Core.pdb
-C:\Users\Mega Store\AndroidStudioProjects\SportsPlatform.Auth\SportsPlatform.Auth.Core\.build\api-current\SportsPlatform.Auth.Core.deps.json
-C:\Users\Mega Store\AndroidStudioProjects\SportsPlatform.Auth\SportsPlatform.Auth.Core\.build\api-current\SportsPlatform.Auth.Core.dll
-C:\Users\Mega Store\AndroidStudioProjects\SportsPlatform.Auth\SportsPlatform.Auth.Core\.build\api-current\SportsPlatform.Auth.Core.pdb
-C:\Users\Mega Store\AndroidStudioProjects\SportsPlatform.Auth\.build\api-check\SportsPlatform.Auth.Core.deps.json
-C:\Users\Mega Store\AndroidStudioProjects\SportsPlatform.Auth\.build\api-check\SportsPlatform.Auth.Core.dll
-C:\Users\Mega Store\AndroidStudioProjects\SportsPlatform.Auth\.build\api-check\SportsPlatform.Auth.Core.pdb
-C:\Users\Mega Store\AndroidStudioProjects\SportsPlatform.Auth\.build\sportsplatform-api-check\SportsPlatform.Auth.Core.deps.json
-C:\Users\Mega Store\AndroidStudioProjects\SportsPlatform.Auth\.build\sportsplatform-api-check\SportsPlatform.Auth.Core.dll
-C:\Users\Mega Store\AndroidStudioProjects\SportsPlatform.Auth\.build\sportsplatform-api-check\SportsPlatform.Auth.Core.pdb
-C:\Users\Mega Store\AndroidStudioProjects\SportsPlatform.Auth\SportsPlatform.Auth.Core\.verify-build\api\SportsPlatform.Auth.Core.deps.json
-C:\Users\Mega Store\AndroidStudioProjects\SportsPlatform.Auth\SportsPlatform.Auth.Core\.verify-build\api\SportsPlatform.Auth.Core.dll
-C:\Users\Mega Store\AndroidStudioProjects\SportsPlatform.Auth\SportsPlatform.Auth.Core\.verify-build\api\SportsPlatform.Auth.Core.pdb
-C:\Users\Mega Store\AndroidStudioProjects\SportsPlatform.Auth\api-build-check\SportsPlatform.Auth.Core.deps.json
-C:\Users\Mega Store\AndroidStudioProjects\SportsPlatform.Auth\api-build-check\SportsPlatform.Auth.Core.dll
-C:\Users\Mega Store\AndroidStudioProjects\SportsPlatform.Auth\api-build-check\SportsPlatform.Auth.Core.pdb
-C:\Users\Mega Store\AndroidStudioProjects\SportsPlatform.Auth\SportsPlatform.Auth.Core\_tmp_api_build\SportsPlatform.Auth.Core.deps.json
-C:\Users\Mega Store\AndroidStudioProjects\SportsPlatform.Auth\SportsPlatform.Auth.Core\_tmp_api_build\SportsPlatform.Auth.Core.dll
-C:\Users\Mega Store\AndroidStudioProjects\SportsPlatform.Auth\SportsPlatform.Auth.Core\_tmp_api_build\SportsPlatform.Auth.Core.pdb
-C:\Users\Mega Store\AndroidStudioProjects\SportsPlatform.Auth\.buildcheck\api\SportsPlatform.Auth.Core.deps.json
-C:\Users\Mega Store\AndroidStudioProjects\SportsPlatform.Auth\.buildcheck\api\SportsPlatform.Auth.Core.dll
-C:\Users\Mega Store\AndroidStudioProjects\SportsPlatform.Auth\.buildcheck\api\SportsPlatform.Auth.Core.pdb
-C:\Users\Mega Store\AndroidStudioProjects\SportsPlatform.Auth\_tmp_api_location_build\SportsPlatform.Auth.Core.deps.json
-C:\Users\Mega Store\AndroidStudioProjects\SportsPlatform.Auth\_tmp_api_location_build\SportsPlatform.Auth.Core.dll
-C:\Users\Mega Store\AndroidStudioProjects\SportsPlatform.Auth\_tmp_api_location_build\SportsPlatform.Auth.Core.pdb
-C:\Users\Mega Store\AndroidStudioProjects\SportsPlatform.Auth\.build\api-verify\SportsPlatform.Auth.Core.deps.json
-C:\Users\Mega Store\AndroidStudioProjects\SportsPlatform.Auth\.build\api-verify\SportsPlatform.Auth.Core.dll
-C:\Users\Mega Store\AndroidStudioProjects\SportsPlatform.Auth\.build\api-verify\SportsPlatform.Auth.Core.pdb
-c:\Users\Mega Store\AndroidStudioProjects\SportsPlatform.Auth\_verify_build\SportsPlatform.Auth.Core.deps.json
-c:\Users\Mega Store\AndroidStudioProjects\SportsPlatform.Auth\_verify_build\SportsPlatform.Auth.Core.dll
-c:\Users\Mega Store\AndroidStudioProjects\SportsPlatform.Auth\_verify_build\SportsPlatform.Auth.Core.pdb
-C:\Users\Mega Store\AndroidStudioProjects\SportsPlatform.Auth\.build\api-video-fix\SportsPlatform.Auth.Core.deps.json
-C:\Users\Mega Store\AndroidStudioProjects\SportsPlatform.Auth\.build\api-video-fix\SportsPlatform.Auth.Core.dll
-C:\Users\Mega Store\AndroidStudioProjects\SportsPlatform.Auth\.build\api-video-fix\SportsPlatform.Auth.Core.pdb
-C:\Users\Mega Store\AndroidStudioProjects\SportsPlatform.Auth\.build\api-video-fix2\SportsPlatform.Auth.Core.deps.json
-C:\Users\Mega Store\AndroidStudioProjects\SportsPlatform.Auth\.build\api-video-fix2\SportsPlatform.Auth.Core.dll
-C:\Users\Mega Store\AndroidStudioProjects\SportsPlatform.Auth\.build\api-video-fix2\SportsPlatform.Auth.Core.pdb
-C:\Users\Mega Store\AndroidStudioProjects\SportsPlatform.Auth\.build\api-video-fix3\SportsPlatform.Auth.Core.deps.json
-C:\Users\Mega Store\AndroidStudioProjects\SportsPlatform.Auth\.build\api-video-fix3\SportsPlatform.Auth.Core.dll
-C:\Users\Mega Store\AndroidStudioProjects\SportsPlatform.Auth\.build\api-video-fix3\SportsPlatform.Auth.Core.pdb
-C:\Users\Mega Store\AndroidStudioProjects\SportsPlatform.Auth\.build\api-verify-after-log-fix\SportsPlatform.Auth.Core.deps.json
-C:\Users\Mega Store\AndroidStudioProjects\SportsPlatform.Auth\.build\api-verify-after-log-fix\SportsPlatform.Auth.Core.dll
-C:\Users\Mega Store\AndroidStudioProjects\SportsPlatform.Auth\.build\api-verify-after-log-fix\SportsPlatform.Auth.Core.pdb
-C:\Users\Mega Store\AndroidStudioProjects\SportsPlatform.Auth\.build\api-ef-filter-check\SportsPlatform.Auth.Core.deps.json
-C:\Users\Mega Store\AndroidStudioProjects\SportsPlatform.Auth\.build\api-ef-filter-check\SportsPlatform.Auth.Core.dll
-C:\Users\Mega Store\AndroidStudioProjects\SportsPlatform.Auth\.build\api-ef-filter-check\SportsPlatform.Auth.Core.pdb
+C:\Users\engMa\Desktop\New folder\Equipex\SportsPlatform.Auth\SportsPlatform.Auth.Core\bin\Debug\net9.0\SportsPlatform.Auth.Core.deps.json
+C:\Users\engMa\Desktop\New folder\Equipex\SportsPlatform.Auth\SportsPlatform.Auth.Core\bin\Debug\net9.0\SportsPlatform.Auth.Core.dll
+C:\Users\engMa\Desktop\New folder\Equipex\SportsPlatform.Auth\SportsPlatform.Auth.Core\bin\Debug\net9.0\SportsPlatform.Auth.Core.pdb
+C:\Users\engMa\Desktop\New folder\Equipex\SportsPlatform.Auth\SportsPlatform.Auth.Core\obj\Debug\net9.0\SportsPlatform.Auth.Core.csproj.AssemblyReference.cache
+C:\Users\engMa\Desktop\New folder\Equipex\SportsPlatform.Auth\SportsPlatform.Auth.Core\obj\Debug\net9.0\SportsPlatform.Auth.Core.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\engMa\Desktop\New folder\Equipex\SportsPlatform.Auth\SportsPlatform.Auth.Core\obj\Debug\net9.0\SportsPlatform.Auth.Core.AssemblyInfoInputs.cache
+C:\Users\engMa\Desktop\New folder\Equipex\SportsPlatform.Auth\SportsPlatform.Auth.Core\obj\Debug\net9.0\SportsPlatform.Auth.Core.AssemblyInfo.cs
+C:\Users\engMa\Desktop\New folder\Equipex\SportsPlatform.Auth\SportsPlatform.Auth.Core\obj\Debug\net9.0\SportsPlatform.Auth.Core.csproj.CoreCompileInputs.cache
+C:\Users\engMa\Desktop\New folder\Equipex\SportsPlatform.Auth\SportsPlatform.Auth.Core\obj\Debug\net9.0\SportsPlatform.Auth.Core.sourcelink.json
+C:\Users\engMa\Desktop\New folder\Equipex\SportsPlatform.Auth\SportsPlatform.Auth.Core\obj\Debug\net9.0\SportsPlatform.Auth.Core.dll
+C:\Users\engMa\Desktop\New folder\Equipex\SportsPlatform.Auth\SportsPlatform.Auth.Core\obj\Debug\net9.0\refint\SportsPlatform.Auth.Core.dll
+C:\Users\engMa\Desktop\New folder\Equipex\SportsPlatform.Auth\SportsPlatform.Auth.Core\obj\Debug\net9.0\SportsPlatform.Auth.Core.pdb
+C:\Users\engMa\Desktop\New folder\Equipex\SportsPlatform.Auth\SportsPlatform.Auth.Core\obj\Debug\net9.0\ref\SportsPlatform.Auth.Core.dll

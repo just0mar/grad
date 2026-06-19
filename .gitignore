@@ -1,0 +1,41 @@
+# .NET Core
+bin/
+obj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.log
+*.err.log
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.env
+venv_chatbot/
+venv_extractor/
+venv_fiba/
+
+# Flutter / Dart
+.dart_tool/
+.packages
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+
+# Node.js
+node_modules/
+dist/
+.npm/
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# IDEs
+.vscode/
+.idea/
