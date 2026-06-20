@@ -11,7 +11,7 @@ public interface IMedicalService
     Task<List<MedicalRecordDto>> GetMyMedicalRecordsAsync(Guid callerUserId);
     Task<MedicalRecordDto> UpdateMedicalClearanceAsync(Guid clubId, Guid teamId, Guid recordId, Guid callerUserId, UpdateMedicalClearanceRequest request);
     Task<MedicalDocumentRequestDto> RequestMedicalDocumentAsync(Guid clubId, Guid teamId, Guid recordId, Guid callerUserId, RequestMedicalDocumentRequest request);
-    Task<MedicalDocumentRequestDto> UploadMedicalDocumentAsync(Guid requestId, Guid callerUserId, Stream fileStream, string fileName, string contentType, long fileSizeBytes, string webRootPath);
-    Task<MedicalDocumentDownloadDto> GetMedicalDocumentDownloadAsync(Guid requestId, Guid callerUserId, string webRootPath);
+    Task<MedicalDocumentRequestDto> UploadMedicalDocumentAsync(Guid requestId, Guid callerUserId, Stream fileStream, string fileName, string contentType, long fileSizeBytes);
+    Task<MedicalDocumentDownloadDto> GetMedicalDocumentDownloadAsync(Guid requestId, Guid callerUserId);
     Task DeleteMedicalRecordAsync(Guid clubId, Guid teamId, Guid recordId, Guid callerUserId);
 }

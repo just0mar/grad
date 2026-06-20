@@ -95,7 +95,7 @@ public class MessagingController : ControllerBase
 
         await using var stream = file.OpenReadStream();
         var result = await _svc.SendMediaMessageAsync(
-            conversationId, uid.Value, stream, file.FileName, file.ContentType, file.Length, _environment.WebRootPath);
+            conversationId, uid.Value, stream, file.FileName, file.ContentType, file.Length);
         await TryOptimizeUploadedVideoAsync(result.MediaUrl, file.FileName);
         return Created("", result);
     }
@@ -105,6 +105,9 @@ public class MessagingController : ControllerBase
     private async Task TryOptimizeUploadedVideoAsync(string? mediaUrl, string fileName)
     {
         if (string.IsNullOrWhiteSpace(mediaUrl) || string.IsNullOrWhiteSpace(_environment.WebRootPath))
+            return;
+
+        if (mediaUrl.StartsWith("http", StringComparison.OrdinalIgnoreCase))
             return;
 
         var extension = Path.GetExtension(fileName);

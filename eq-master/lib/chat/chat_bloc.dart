@@ -1,3 +1,4 @@
+import 'dart:typed_data';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -21,16 +22,18 @@ class SendMessage extends ChatEvent {
 }
 
 class SendMediaMessage extends ChatEvent {
-  final String filePath;
-  final String fileName;
-  final String? caption;
-  SendMediaMessage({
-    required this.filePath,
-    required this.fileName,
-    this.caption,
-  });
+    final Uint8List? fileBytes;
+    final String? filePath;
+    final String fileName;
+    final String? caption;
+    SendMediaMessage({
+      this.fileBytes,
+      this.filePath,
+      required this.fileName,
+      this.caption,
+    });
   @override
-  List<Object?> get props => [filePath, fileName, caption];
+  List<Object?> get props => [fileBytes, filePath, fileName, caption];
 }
 
 class SendVoiceNote extends ChatEvent {
@@ -200,10 +203,11 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     emit(state.copyWith(isSending: true, clearError: true));
     try {
       final sent = await _messagingService.sendMedia(
-        conversationId,
-        event.filePath,
-        event.fileName,
-      );
+          conversationId,
+          event.fileBytes,
+          event.filePath,
+          event.fileName,
+        );
       var updated = [_mapDto(sent), ...state.messages];
       // Send caption as a follow-up text message if provided
       if (event.caption != null && event.caption!.trim().isNotEmpty) {
@@ -229,10 +233,11 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     try {
       final fileName = 'voice_${DateTime.now().millisecondsSinceEpoch}.m4a';
       final sent = await _messagingService.sendMedia(
-        conversationId,
-        event.filePath,
-        fileName,
-      );
+          conversationId,
+          null,
+          event.filePath,
+          fileName,
+        );
       final updated = [_mapDto(sent), ...state.messages];
       emit(state.copyWith(messages: updated, isSending: false));
     } on ApiException catch (e) {

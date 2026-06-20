@@ -1,5 +1,6 @@
 import 'dart:typed_data';
-
+import 'package:flutter/foundation.dart';
+import 'package:file_picker/file_picker.dart';
 import '../models/api_models.dart';
 import 'api_client.dart';
 
@@ -59,12 +60,13 @@ class MedicalService {
   }
 
   Future<dynamic> uploadDocument(
-      String requestId, String filePath, String fileName) {
+      String requestId, PlatformFile file) {
     return _api.uploadFile(
       '/players/me/medical/document-requests/$requestId/upload',
       fileField: 'file',
-      filePath: filePath,
-      fileName: fileName,
+      fileBytes: file.bytes,
+      filePath: kIsWeb ? null : file.path,
+      fileName: file.name,
     );
   }
 

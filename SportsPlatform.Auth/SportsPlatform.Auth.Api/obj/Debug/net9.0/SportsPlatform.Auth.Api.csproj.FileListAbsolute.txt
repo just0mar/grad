@@ -7,6 +7,8 @@ C:\Users\engMa\Desktop\New folder\Equipex\SportsPlatform.Auth\SportsPlatform.Aut
 C:\Users\engMa\Desktop\New folder\Equipex\SportsPlatform.Auth\SportsPlatform.Auth.Api\bin\Debug\net9.0\SportsPlatform.Auth.Api.runtimeconfig.json
 C:\Users\engMa\Desktop\New folder\Equipex\SportsPlatform.Auth\SportsPlatform.Auth.Api\bin\Debug\net9.0\SportsPlatform.Auth.Api.dll
 C:\Users\engMa\Desktop\New folder\Equipex\SportsPlatform.Auth\SportsPlatform.Auth.Api\bin\Debug\net9.0\SportsPlatform.Auth.Api.pdb
+C:\Users\engMa\Desktop\New folder\Equipex\SportsPlatform.Auth\SportsPlatform.Auth.Api\bin\Debug\net9.0\AWSSDK.Core.dll
+C:\Users\engMa\Desktop\New folder\Equipex\SportsPlatform.Auth\SportsPlatform.Auth.Api\bin\Debug\net9.0\AWSSDK.S3.dll
 C:\Users\engMa\Desktop\New folder\Equipex\SportsPlatform.Auth\SportsPlatform.Auth.Api\bin\Debug\net9.0\BCrypt.Net-Next.dll
 C:\Users\engMa\Desktop\New folder\Equipex\SportsPlatform.Auth\SportsPlatform.Auth.Api\bin\Debug\net9.0\BouncyCastle.Cryptography.dll
 C:\Users\engMa\Desktop\New folder\Equipex\SportsPlatform.Auth\SportsPlatform.Auth.Api\bin\Debug\net9.0\Google.Apis.dll

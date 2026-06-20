@@ -3,10 +3,13 @@ import 'dart:typed_data';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 
 import '../config/app_config.dart';
+import '../main.dart';
+import '../auth/LoginView.dart';
 
 class ApiClient {
   ApiClient._();
@@ -65,6 +68,14 @@ class ApiClient {
     await _storage.delete(key: AppConfig.userKey);
     await _storage.delete(key: AppConfig.activeTeamKey);
     await _storage.delete(key: AppConfig.activeClubKey);
+
+    final context = MyApp.navigatorKey.currentContext;
+    if (context != null) {
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const LoginView()),
+        (route) => false,
+      );
+    }
   }
 
   Future<dynamic> get(String path, {Map<String, String>? queryParams}) async {
@@ -197,7 +208,8 @@ class ApiClient {
   Future<dynamic> uploadPutFile(
     String path, {
     required String fileField,
-    required String filePath,
+    String? filePath,
+    Uint8List? fileBytes,
     required String fileName,
     Map<String, String>? fields,
   }) async {
@@ -205,13 +217,13 @@ class ApiClient {
     final token = await accessToken;
     if (token != null) request.headers['Authorization'] = 'Bearer $token';
     if (fields != null) request.fields.addAll(fields);
-    request.files.add(
-      await http.MultipartFile.fromPath(
-        fileField,
-        filePath,
-        filename: fileName,
-      ),
-    );
+    
+    if (fileBytes != null) {
+      request.files.add(http.MultipartFile.fromBytes(fileField, fileBytes, filename: fileName));
+    } else if (filePath != null) {
+      request.files.add(await http.MultipartFile.fromPath(fileField, filePath, filename: fileName));
+    }
+
     var streamed = await _client.send(request);
     var response = await http.Response.fromStream(streamed);
     if (response.statusCode == 401 && await _tryRefresh()) {
@@ -219,13 +231,13 @@ class ApiClient {
       final token = await accessToken;
       if (token != null) retry.headers['Authorization'] = 'Bearer $token';
       if (fields != null) retry.fields.addAll(fields);
-      retry.files.add(
-        await http.MultipartFile.fromPath(
-          fileField,
-          filePath,
-          filename: fileName,
-        ),
-      );
+      
+      if (fileBytes != null) {
+        retry.files.add(http.MultipartFile.fromBytes(fileField, fileBytes, filename: fileName));
+      } else if (filePath != null) {
+        retry.files.add(await http.MultipartFile.fromPath(fileField, filePath, filename: fileName));
+      }
+
       streamed = await _client.send(retry);
       response = await http.Response.fromStream(streamed);
     }

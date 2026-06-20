@@ -1,3 +1,6 @@
+using System;
+using System.IO;
+using System.Threading.Tasks;
 using SportsPlatform.Auth.Core.Interfaces;
 
 namespace SportsPlatform.Auth.Infrastructure.Services;
@@ -11,7 +14,7 @@ public class LocalFileStorageService : IFileStorageService
         _uploadsRoot = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
     }
 
-    public async Task<string> SaveFileAsync(Stream stream, string fileName, string category)
+    public async Task<string> SaveFileAsync(Stream stream, string fileName, string category, string? contentType = null)
     {
         var safeCategory = SanitizeSegment(category);
         var extension = Path.GetExtension(fileName);
@@ -33,8 +36,7 @@ public class LocalFileStorageService : IFileStorageService
         if (string.IsNullOrWhiteSpace(relativeUrl) || !relativeUrl.StartsWith("/uploads/", StringComparison.OrdinalIgnoreCase))
             return Task.CompletedTask;
 
-        var relativePath = relativeUrl.TrimStart('/').Replace('/', Path.DirectorySeparatorChar);
-        var fullPath = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", relativePath));
+        var fullPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", relativeUrl.TrimStart('/'));
         var uploadsRoot = Path.GetFullPath(_uploadsRoot);
 
         if (fullPath.StartsWith(uploadsRoot, StringComparison.OrdinalIgnoreCase) && File.Exists(fullPath))
@@ -43,16 +45,15 @@ public class LocalFileStorageService : IFileStorageService
         return Task.CompletedTask;
     }
 
-    private static string SanitizeSegment(string value)
+    private string SanitizeSegment(string segment)
     {
-        var cleaned = new string(value.Where(c => char.IsLetterOrDigit(c) || c == '-' || c == '_').ToArray());
-        return string.IsNullOrWhiteSpace(cleaned) ? "files" : cleaned;
+        var invalidChars = Path.GetInvalidPathChars();
+        return string.Join("_", segment.Split(invalidChars, StringSplitOptions.RemoveEmptyEntries));
     }
 
-    private static string SanitizeFileName(string value)
+    private string SanitizeFileName(string name)
     {
-        var invalid = Path.GetInvalidFileNameChars();
-        var cleaned = new string(value.Where(c => !invalid.Contains(c)).ToArray()).Trim();
-        return string.IsNullOrWhiteSpace(cleaned) ? "upload" : cleaned;
+        var invalidChars = Path.GetInvalidFileNameChars();
+        return string.Join("_", name.Split(invalidChars, StringSplitOptions.RemoveEmptyEntries));
     }
 }

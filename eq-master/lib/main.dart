@@ -52,7 +52,7 @@ void main() async {
 
 class MyApp extends StatefulWidget {
   const MyApp({super.key});
-  static final GlobalKey<NavigatorState> _navigatorKey =
+  static final GlobalKey<NavigatorState> navigatorKey =
       GlobalKey<NavigatorState>();
 
   @override
@@ -87,7 +87,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     return BlocBuilder<AppBloc, AppState>(
       builder: (context, state) {
         return MaterialApp(
-          navigatorKey: MyApp._navigatorKey,
+          navigatorKey: MyApp.navigatorKey,
           title: 'Equipex',
           debugShowCheckedModeBanner: false,
           // Localization: our hand-written strings + Flutter's Material/Widgets/
@@ -368,30 +368,32 @@ class _SplashViewState extends State<SplashView>
         child: Stack(
           children: [
             Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  RotationTransition(
-                    turns: _controller,
-                    child: Image.asset(
-                      'assets/logo.png',
-                      width: logoSize,
-                      height: logoSize,
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    RotationTransition(
+                      turns: _controller,
+                      child: Image.asset(
+                        'assets/logo.png',
+                        width: logoSize,
+                        height: logoSize,
+                      ),
                     ),
-                  ),
-                  Text(
-                    'EQUIPEX',
-                    style: TextStyle(
-                      fontFamily: 'Facon',
-                      fontSize: 26,
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).brightness == Brightness.dark
-                          ? Colors.white
-                          : Colors.black,
-                      letterSpacing: 1.5,
+                    Text(
+                      'EQUIPEX',
+                      style: TextStyle(
+                        fontFamily: 'Facon',
+                        fontSize: 26,
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? Colors.white
+                            : Colors.black,
+                        letterSpacing: 1.5,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ],

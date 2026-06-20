@@ -8,6 +8,7 @@
     ".NETCoreApp,Version=v9.0": {
       "SportsPlatform.Auth.Infrastructure/1.0.0": {
         "dependencies": {
+          "AWSSDK.S3": "4.0.25.2",
           "BCrypt.Net-Next": "4.1.0",
           "MailKit": "4.17.0",
           "Microsoft.Extensions.Configuration.Abstractions": "10.0.5",
@@ -18,6 +19,25 @@
         },
         "runtime": {
           "SportsPlatform.Auth.Infrastructure.dll": {}
+        }
+      },
+      "AWSSDK.Core/4.0.9.6": {
+        "runtime": {
+          "lib/net8.0/AWSSDK.Core.dll": {
+            "assemblyVersion": "4.0.0.0",
+            "fileVersion": "4.0.9.6"
+          }
+        }
+      },
+      "AWSSDK.S3/4.0.25.2": {
+        "dependencies": {
+          "AWSSDK.Core": "4.0.9.6"
+        },
+        "runtime": {
+          "lib/net8.0/AWSSDK.S3.dll": {
+            "assemblyVersion": "4.0.0.0",
+            "fileVersion": "4.0.25.2"
+          }
         }
       },
       "BCrypt.Net-Next/4.1.0": {
@@ -387,6 +407,20 @@
       "type": "project",
       "serviceable": false,
       "sha512": ""
+    },
+    "AWSSDK.Core/4.0.9.6": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-Lzi5hMHNB+ApeMbQxNDCUNa+Lta00ozr1okKUGqUyNXUC/OG136k8M6jXgNrbwsRxDmVdHHY6UdD4aoUaGVzkQ==",
+      "path": "awssdk.core/4.0.9.6",
+      "hashPath": "awssdk.core.4.0.9.6.nupkg.sha512"
+    },
+    "AWSSDK.S3/4.0.25.2": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-RZ71S6Ra8rw0jS813PM6FNzFx5gaAL4/gO8ZQoO2dcHCPMwCepCwvb/kJdOCknLnZaqdHIGJcmjCvW3622O9jw==",
+      "path": "awssdk.s3/4.0.25.2",
+      "hashPath": "awssdk.s3.4.0.25.2.nupkg.sha512"
     },
     "BCrypt.Net-Next/4.1.0": {
       "type": "package",

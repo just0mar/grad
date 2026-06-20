@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using SportsPlatform.Auth.Core.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using SportsPlatform.Auth.Core.Entities;
 using SportsPlatform.Auth.Core.Enums;
@@ -13,12 +14,12 @@ namespace SportsPlatform.Auth.Api.Controllers;
 public class PlanDocumentController : ControllerBase
 {
     private readonly AppDbContext _db;
-    private readonly IWebHostEnvironment _env;
+    private readonly IFileStorageService _storage;
 
-    public PlanDocumentController(AppDbContext db, IWebHostEnvironment env)
+    public PlanDocumentController(AppDbContext db, IFileStorageService storage)
     {
         _db = db;
-        _env = env;
+        _storage = storage;
     }
 
     [HttpGet("clubs/{clubId:guid}/teams/{teamId:guid}/plans/{planId:guid}/documents")]
@@ -66,16 +67,9 @@ public class PlanDocumentController : ControllerBase
         var plan = await _db.CoachingPlans.FirstOrDefaultAsync(p => p.PlanId == planId && p.TeamId == teamId);
         if (plan == null) return NotFound(new { error = "Plan not found." });
 
-        var uploadsDir = Path.Combine(_env.WebRootPath, "uploads", "plans", planId.ToString());
-        Directory.CreateDirectory(uploadsDir);
-
-        var storedName = $"{Guid.NewGuid()}{Path.GetExtension(file.FileName)}";
-        var storagePath = Path.Combine(uploadsDir, storedName);
-
-        await using (var stream = new FileStream(storagePath, FileMode.Create))
-        {
-            await file.CopyToAsync(stream);
-        }
+        await using var stream = file.OpenReadStream();
+        var storagePath = await _storage.SaveFileAsync(stream, file.FileName, "plans/$planId", file.ContentType);
+        var storedName = file.FileName;
 
         var doc = new CoachingPlanDocument
         {

@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+import 'package:file_picker/file_picker.dart';
 import '../models/api_models.dart';
 import 'api_client.dart';
 
@@ -20,10 +22,9 @@ class AnnouncementService {
     String clubId,
     String teamId,
     Map<String, dynamic> request, {
-    String? imagePath,
-    String? imageFileName,
+    PlatformFile? image,
   }) async {
-    final json = imagePath == null
+    final json = image == null
         ? await _api.post(
             '/clubs/$clubId/teams/$teamId/announcements',
             body: request,
@@ -31,8 +32,9 @@ class AnnouncementService {
         : await _api.uploadFile(
             '/clubs/$clubId/teams/$teamId/announcements',
             fileField: 'image',
-            filePath: imagePath,
-            fileName: imageFileName ?? 'announcement-image',
+            fileBytes: image.bytes,
+            filePath: kIsWeb ? null : image.path,
+            fileName: image.name,
             fields: request.map((key, value) => MapEntry(key, '$value')),
           );
     return AnnouncementDto.fromJson(Map<String, dynamic>.from(json as Map));
@@ -43,10 +45,9 @@ class AnnouncementService {
     String teamId,
     String announcementId,
     Map<String, dynamic> request, {
-    String? imagePath,
-    String? imageFileName,
+    PlatformFile? image,
   }) async {
-    final json = imagePath == null
+    final json = image == null
         ? await _api.post(
             '/clubs/$clubId/teams/$teamId/announcements/$announcementId/update',
             body: request,
@@ -54,8 +55,9 @@ class AnnouncementService {
         : await _api.uploadFile(
             '/clubs/$clubId/teams/$teamId/announcements/$announcementId/update',
             fileField: 'image',
-            filePath: imagePath,
-            fileName: imageFileName ?? 'announcement-image',
+            fileBytes: image.bytes,
+            filePath: kIsWeb ? null : image.path,
+            fileName: image.name,
             fields: request.map((key, value) => MapEntry(key, '$value')),
           );
     return AnnouncementDto.fromJson(Map<String, dynamic>.from(json as Map));

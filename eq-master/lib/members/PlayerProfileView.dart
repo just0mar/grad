@@ -3307,8 +3307,7 @@ class _PlayerProfileViewState extends State<PlayerProfileView> with TickerProvid
     }
     if (picked == null || picked.files.isEmpty) return;
     final file = picked.files.first;
-    final path = file.path;
-    if (path == null) return;
+    
 
     const maxBytes = 500 * 1024 * 1024;
     if (file.size > maxBytes) {
@@ -3333,13 +3332,12 @@ class _PlayerProfileViewState extends State<PlayerProfileView> with TickerProvid
     );
     try {
       final dto = await _playerVideoService.uploadVideo(
-        ctx.clubId,
-        ctx.teamId,
-        ctx.playerUserId,
-        cleanTitle,
-        path,
-        file.name,
-      );
+          ctx.clubId,
+          ctx.teamId,
+          ctx.playerUserId,
+          cleanTitle,
+          file,
+        );
       if (!mounted) return;
       ScaffoldMessenger.of(context).hideCurrentSnackBar();
       setState(() {

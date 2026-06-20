@@ -16,11 +16,13 @@ public class MedicalService : IMedicalService
 
     private readonly AppDbContext _db;
     private readonly INotificationService _notifications;
+    private readonly IFileStorageService _storage;
 
-    public MedicalService(AppDbContext db, INotificationService notifications)
+    public MedicalService(AppDbContext db, INotificationService notifications, IFileStorageService storage)
     {
         _db = db;
         _notifications = notifications;
+        _storage = storage;
     }
 
     public async Task<MedicalRecordDto> CreateMedicalRecordAsync(Guid clubId, Guid teamId, Guid playerUserId, Guid callerUserId, CreateMedicalRecordRequest request)
@@ -266,8 +268,7 @@ public class MedicalService : IMedicalService
         Stream fileStream,
         string fileName,
         string contentType,
-        long fileSizeBytes,
-        string webRootPath)
+        long fileSizeBytes)
     {
         if (fileSizeBytes <= 0)
             throw new InvalidOperationException("A document file is required.");
@@ -292,19 +293,12 @@ public class MedicalService : IMedicalService
         var safeOriginalName = SanitizeFileName(fileName);
         var extension = Path.GetExtension(safeOriginalName);
         var storedFileName = $"{requestId:N}_{Guid.NewGuid():N}{extension}";
-        var directory = Path.Combine(webRootPath, "uploads", "medical-documents");
-        Directory.CreateDirectory(directory);
-
-        var filePath = Path.Combine(directory, storedFileName);
-        await using (var output = File.Create(filePath))
-        {
-            await fileStream.CopyToAsync(output);
-        }
+        var fileUrl = await _storage.SaveFileAsync(fileStream, fileName, "medical-documents", contentType);
 
         documentRequest.Status = UploadedDocumentStatus;
         documentRequest.UploadedBy = callerUserId;
         documentRequest.OriginalFileName = safeOriginalName;
-        documentRequest.StoredFileName = storedFileName;
+        documentRequest.StoredFileName = fileUrl;
         documentRequest.ContentType = string.IsNullOrWhiteSpace(contentType) ? "application/octet-stream" : contentType;
         documentRequest.FileSizeBytes = fileSizeBytes;
         documentRequest.UploadedAt = now;
@@ -327,7 +321,7 @@ public class MedicalService : IMedicalService
         return await BuildMedicalDocumentRequestDtoAsync(documentRequest.RequestId);
     }
 
-    public async Task<MedicalDocumentDownloadDto> GetMedicalDocumentDownloadAsync(Guid requestId, Guid callerUserId, string webRootPath)
+    public async Task<MedicalDocumentDownloadDto> GetMedicalDocumentDownloadAsync(Guid requestId, Guid callerUserId)
     {
         var documentRequest = await _db.MedicalDocumentRequests
             .Include(r => r.Record)
@@ -343,9 +337,7 @@ public class MedicalService : IMedicalService
         if (documentRequest.StoredFileName == null)
             throw new InvalidOperationException("Document has not been uploaded yet.");
 
-        var filePath = Path.Combine(webRootPath, "uploads", "medical-documents", documentRequest.StoredFileName);
-        if (!File.Exists(filePath))
-            throw new InvalidOperationException("Uploaded document file was not found.");
+        var filePath = documentRequest.StoredFileName;
 
         return new MedicalDocumentDownloadDto
         {

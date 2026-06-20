@@ -1,3 +1,4 @@
+import 'dart:typed_data';
 import '../models/api_models.dart';
 import '../location/location_point.dart';
 import 'api_client.dart';
@@ -94,13 +95,15 @@ class MessagingService {
   }
 
   Future<MessageDto> sendMedia(
-      String conversationId, String filePath, String fileName) {
+      String conversationId, Uint8List? fileBytes, String? filePath, String fileName, {String? caption}) {
     return _api
         .uploadFile(
           '/messages/conversations/$conversationId/media',
           fileField: 'file',
+          fileBytes: fileBytes,
           filePath: filePath,
           fileName: fileName,
+          fields: caption != null ? {'caption': caption} : {},
         )
         .then((json) =>
             MessageDto.fromJson(Map<String, dynamic>.from(json as Map)));

@@ -1,3 +1,5 @@
+import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
 import 'dart:typed_data';
 
 import '../models/api_models.dart';
@@ -24,15 +26,15 @@ class EventDocumentService {
     String clubId,
     String teamId,
     String eventId,
-    String filePath,
-    String fileName,
+    PlatformFile file,
     String? description,
   ) async {
     final json = await _api.uploadFile(
       '/clubs/$clubId/teams/$teamId/events/$eventId/documents',
       fileField: 'file',
-      filePath: filePath,
-      fileName: fileName,
+      fileBytes: file.bytes,
+      filePath: kIsWeb ? null : file.path,
+      fileName: file.name,
       fields: {
         if (description != null && description.trim().isNotEmpty)
           'description': description.trim(),

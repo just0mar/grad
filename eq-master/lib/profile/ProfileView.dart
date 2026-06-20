@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
@@ -30,7 +31,7 @@ class ProfileView extends StatefulWidget {
 class _ProfileViewState extends State<ProfileView> with TickerProviderStateMixin, SmoothKeyboardMixin {
   bool _editing = false;
   bool _saving = false;
-  File? _pickedImage;
+  PlatformFile? _pickedImage;
   Future<Set<String>>? _commonTeamIdsFuture;
   String _commonTeamIdsKey = '';
 
@@ -127,9 +128,9 @@ class _ProfileViewState extends State<ProfileView> with TickerProviderStateMixin
       type: FileType.image,
       allowMultiple: false,
     );
-    final path = result?.files.single.path;
-    if (path == null) return;
-    setState(() => _pickedImage = File(path));
+    final file = result?.files.single;
+    if (file == null) return;
+    setState(() => _pickedImage = file);
   }
 
   void _ensureCommonTeams(TeamState teamState) {
@@ -253,13 +254,15 @@ class _ProfileViewState extends State<ProfileView> with TickerProviderStateMixin
               ? idStr.substring(idStr.length - 8)
               : idStr;
 
-          // Resolve profile image for display
-          ImageProvider? profileImage;
-          if (_editing && _pickedImage != null) {
-            profileImage = FileImage(_pickedImage!);
-          } else if (resolvedImg != null) {
-            profileImage = NetworkImage(resolvedImg);
-          }
+            // Resolve profile image for display
+            ImageProvider? profileImage;
+            if (_editing && _pickedImage != null) {
+              profileImage = kIsWeb 
+                  ? MemoryImage(_pickedImage!.bytes!) as ImageProvider
+                  : FileImage(File(_pickedImage!.path!));
+            } else if (resolvedImg != null) {
+              profileImage = NetworkImage(resolvedImg);
+            }
 
           return buildKeyboardDismissible(
             child: AppBackground(

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
@@ -42,7 +43,7 @@ class _AddTeamContentState extends State<_AddTeamContent>
   final TextEditingController _teamNameController = TextEditingController();
   late final FocusNode _teamNameFocus;
   bool _isSaving = false;
-  File? _teamImage;
+  PlatformFile? _teamImage;
 
   @override
   void initState() {
@@ -293,9 +294,9 @@ class _AddTeamContentState extends State<_AddTeamContent>
               type: FileType.image,
               allowMultiple: false,
             );
-            final path = result?.files.single.path;
-            if (path == null) return;
-            setState(() => _teamImage = File(path));
+            final file = result?.files.single;
+            if (file == null) return;
+            setState(() => _teamImage = file);
           },
           child: CircleAvatar(
             radius: 48,
@@ -303,7 +304,11 @@ class _AddTeamContentState extends State<_AddTeamContent>
             child: CircleAvatar(
               radius: 44,
               backgroundColor: const Color(0xFF1B3A2D),
-              backgroundImage: _teamImage == null ? null : FileImage(_teamImage!),
+              backgroundImage: _teamImage == null 
+                  ? null 
+                  : (kIsWeb 
+                      ? MemoryImage(_teamImage!.bytes!) as ImageProvider
+                      : FileImage(File(_teamImage!.path!))),
               child: _teamImage == null
                   ? const Icon(Icons.camera_alt, color: Colors.white, size: 28)
                   : null,

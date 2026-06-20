@@ -1514,15 +1514,14 @@ class _GameDetailViewState extends State<GameDetailHistoryView> with TickerProvi
     if (picked == null || picked.files.isEmpty || !mounted) return;
 
     final file = picked.files.single;
-    final path = file.path;
-    if (path == null) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(AppLocalizations.of(context).fileReadError)),
-        );
+      if (file == null) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(AppLocalizations.of(context).fileReadError)),
+          );
+        }
+        return;
       }
-      return;
-    }
 
     final descController = TextEditingController();
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -1634,12 +1633,11 @@ class _GameDetailViewState extends State<GameDetailHistoryView> with TickerProvi
       final desc = descController.text.trim();
       final created = await _docService.uploadDocument(
         game.clubId!,
-        game.teamId!,
-        game.eventId!,
-        path,
-        file.name,
-        desc.isEmpty ? null : desc,
-      );
+          game.teamId!,
+          game.eventId!,
+          file,
+          desc.isEmpty ? null : desc,
+        );
       if (mounted) {
         setState(() => _documents.insert(0, created));
         ScaffoldMessenger.of(context).showSnackBar(
@@ -1889,15 +1887,14 @@ class _GameDetailViewState extends State<GameDetailHistoryView> with TickerProvi
     if (picked == null || picked.files.isEmpty || !mounted) return;
 
     final file = picked.files.single;
-    final path = file.path;
-    if (path == null) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(AppLocalizations.of(context).fileReadError)),
-        );
+      if (file == null) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(AppLocalizations.of(context).fileReadError)),
+          );
+        }
+        return;
       }
-      return;
-    }
     if (file.size > _maxVideoBytes) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -2014,11 +2011,11 @@ class _GameDetailViewState extends State<GameDetailHistoryView> with TickerProvi
     );
 
     if (result == true) {
-      await _addVideo(titleController.text.trim(), path, file.name);
+      await _addVideo(titleController.text.trim(), file);
     }
   }
 
-  Future<void> _addVideo(String title, String filePath, String fileName) async {
+  Future<void> _addVideo(String title, PlatformFile file) async {
     if (_savingVideo) return;
     final game = widget.game;
     if (game.eventId == null || game.clubId == null || game.teamId == null) return;
@@ -2033,7 +2030,7 @@ class _GameDetailViewState extends State<GameDetailHistoryView> with TickerProvi
     }
     try {
       final created = await _videoService.uploadVideo(
-          game.clubId!, game.teamId!, game.eventId!, title, filePath, fileName);
+          game.clubId!, game.teamId!, game.eventId!, title, file);
       if (mounted) {
         ScaffoldMessenger.of(context).hideCurrentSnackBar();
         setState(() => _videos.insert(0, created));

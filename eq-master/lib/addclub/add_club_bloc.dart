@@ -1,5 +1,4 @@
-import 'dart:io';
-
+import 'package:file_picker/file_picker.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -22,11 +21,11 @@ class ClubNameChanged extends AddClubEvent {
 }
 
 class ClubLogoSelected extends AddClubEvent {
-  final File logoFile;
+  final PlatformFile logoFile;
   ClubLogoSelected(this.logoFile);
 
   @override
-  List<Object?> get props => [logoFile.path];
+  List<Object?> get props => [logoFile.name];
 }
 
 class SubmitCreateClub extends AddClubEvent {}
@@ -57,7 +56,7 @@ class ClubLocationPointChanged extends AddClubEvent {
 
 class AddClubState extends Equatable {
   final String clubName;
-  final File? logoFile;
+  final PlatformFile? logoFile;
   final String establishedDate;
   final String location;
   final double? locationLatitude;
@@ -80,7 +79,7 @@ class AddClubState extends Equatable {
 
   AddClubState copyWith({
     String? clubName,
-    File? logoFile,
+    PlatformFile? logoFile,
     String? establishedDate,
     String? location,
     double? locationLatitude,
@@ -106,7 +105,7 @@ class AddClubState extends Equatable {
   @override
   List<Object?> get props => [
         clubName,
-        logoFile?.path,
+        logoFile?.name,
         establishedDate,
         location,
         locationLatitude,

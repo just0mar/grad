@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
@@ -40,7 +41,7 @@ class _CompleteProfileViewState extends State<CompleteProfileView>
   late final TextEditingController _emailCtrl; // FIX: was created inline in build()
   final TextEditingController _dobCtrl = TextEditingController();
   late final FocusNode _nameFocus;
-  File? _profileImage;
+  PlatformFile? _profileImage;
   bool _loading = false;
 
   @override
@@ -91,9 +92,9 @@ class _CompleteProfileViewState extends State<CompleteProfileView>
       type: FileType.image,
       allowMultiple: false,
     );
-    final path = result?.files.single.path;
-    if (path == null) return;
-    setState(() => _profileImage = File(path));
+    final file = result?.files.single;
+    if (file == null) return;
+    setState(() => _profileImage = file);
   }
 
   // ── Submit ──────────────────────────────────────────────────────────────────
@@ -280,7 +281,9 @@ class _CompleteProfileViewState extends State<CompleteProfileView>
                                           ? Colors.grey[800]
                                           : Colors.grey[200],
                                       backgroundImage: _profileImage != null
-                                          ? FileImage(_profileImage!)
+                                          ? (kIsWeb
+                                              ? MemoryImage(_profileImage!.bytes!) as ImageProvider
+                                              : FileImage(File(_profileImage!.path!)))
                                           : null,
                                       child: _profileImage == null
                                           ? Icon(

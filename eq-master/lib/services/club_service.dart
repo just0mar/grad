@@ -1,4 +1,5 @@
-import 'dart:io';
+import 'package:flutter/foundation.dart';
+import 'package:file_picker/file_picker.dart';
 
 import '../models/api_models.dart';
 import 'api_client.dart';
@@ -19,7 +20,7 @@ class ClubService {
 
   Future<ClubDto> createClub(
     String name, {
-    File? logo,
+    PlatformFile? logo,
     String? location,
     double? locationLatitude,
     double? locationLongitude,
@@ -43,10 +44,9 @@ class ClubService {
         : await _api.uploadFile(
             '/clubs',
             fileField: 'logo',
-            filePath: logo.path,
-            fileName: logo.uri.pathSegments.isEmpty
-                ? 'club-logo'
-                : logo.uri.pathSegments.last,
+            fileBytes: logo.bytes,
+            filePath: kIsWeb ? null : logo.path,
+            fileName: logo.name,
             fields: fields,
           );
     return ClubDto.fromJson(Map<String, dynamic>.from(json as Map));

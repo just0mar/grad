@@ -509,12 +509,7 @@ class _MainNavigationState extends State<MainNavigation>
             'type': 'navigate',
             'route': const JoinTeamView(),
           },
-          {
-            'icon': Icons.link,
-            'label': t.fabAskEquipo,
-            'type': 'navigate',
-            'route': const AskEquipoView(),
-          },
+          
           {
             'icon': Icons.settings,
             'label': t.fabSettings,
@@ -628,8 +623,17 @@ class _MainNavigationState extends State<MainNavigation>
         ];
     }
 
-    return _sortActionsByLabelSize(actions)
-        .asMap().entries.map((entry) {
+    if (!actions.any((a) => a['route'] is AskEquipoView)) {
+        actions.add({
+          'icon': Icons.smart_toy_outlined,
+          'label': t.fabAskEquipo,
+          'type': 'navigate',
+          'route': const AskEquipoView(),
+        });
+      }
+
+      return _sortActionsByLabelSize(actions)
+          .asMap().entries.map((entry) {
           final action = entry.value;
           return StaggeredListItem(
             index: entry.key,

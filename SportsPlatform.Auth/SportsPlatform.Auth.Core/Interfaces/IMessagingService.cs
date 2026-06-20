@@ -14,5 +14,5 @@ public interface IMessagingService
     Task DeleteMessageAsync(Guid messageId, Guid callerUserId);
     Task<MessageReactionDto> AddReactionAsync(Guid messageId, Guid callerUserId, SendReactionRequest request);
     Task RemoveReactionAsync(Guid messageId, Guid callerUserId, string emoji);
-    Task<MessageDto> SendMediaMessageAsync(Guid conversationId, Guid callerUserId, Stream fileStream, string fileName, string contentType, long fileSizeBytes, string webRootPath);
+    Task<MessageDto> SendMediaMessageAsync(Guid conversationId, Guid callerUserId, Stream fileStream, string fileName, string contentType, long fileSizeBytes);
 }

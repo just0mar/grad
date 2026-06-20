@@ -10,7 +10,8 @@ namespace SportsPlatform.Auth.Infrastructure.Services;
 public class MessagingService : IMessagingService
 {
     private readonly AppDbContext _db;
-    public MessagingService(AppDbContext db) { _db = db; }
+    private readonly IFileStorageService _storage;
+    public MessagingService(AppDbContext db, IFileStorageService storage) { _db = db; _storage = storage; }
 
     public async Task<ConversationDto> CreateConversationAsync(Guid callerUserId, CreateConversationRequest request)
     {
@@ -300,7 +301,7 @@ public class MessagingService : IMessagingService
         }
     }
 
-    public async Task<MessageDto> SendMediaMessageAsync(Guid conversationId, Guid callerUserId, Stream fileStream, string fileName, string contentType, long fileSizeBytes, string webRootPath)
+    public async Task<MessageDto> SendMediaMessageAsync(Guid conversationId, Guid callerUserId, Stream fileStream, string fileName, string contentType, long fileSizeBytes)
     {
         await EnsureParticipantAsync(conversationId, callerUserId);
 
@@ -308,18 +309,7 @@ public class MessagingService : IMessagingService
         if (fileSizeBytes > maxSize)
             throw new InvalidOperationException("File size exceeds the 25 MB limit.");
 
-        var uploadsDir = Path.Combine(webRootPath, "uploads", "chat-media");
-        Directory.CreateDirectory(uploadsDir);
-
-        var uniqueName = $"{Guid.NewGuid()}{Path.GetExtension(fileName)}";
-        var filePath = Path.Combine(uploadsDir, uniqueName);
-
-        await using (var fs = new FileStream(filePath, FileMode.Create))
-        {
-            await fileStream.CopyToAsync(fs);
-        }
-
-        var mediaUrl = $"/uploads/chat-media/{uniqueName}";
+        var mediaUrl = await _storage.SaveFileAsync(fileStream, fileName, "chat-media", contentType);
         var messageType = contentType.StartsWith("image/") ? "image"
             : contentType.StartsWith("video/") ? "video"
             : contentType.StartsWith("audio/") ? "audio"

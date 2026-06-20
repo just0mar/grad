@@ -448,14 +448,17 @@ class _ChatBodyState extends State<_ChatBody> with WidgetsBindingObserver {
     );
     if (result == null || !mounted) return;
     for (final f in result.files) {
-      context.read<ChatBloc>().add(
-        SendMediaMessage(
-          filePath: f.path,
-          fileName: f.name,
-          caption: result.caption,
-        ),
-      );
-    }
+        final bytes = kIsWeb ? await f.readAsBytes() : null;
+        if (!mounted) return;
+        context.read<ChatBloc>().add(
+          SendMediaMessage(
+            fileBytes: bytes,
+            filePath: kIsWeb ? null : f.path,
+            fileName: f.name,
+            caption: result.caption,
+          ),
+        );
+      }
     _scrollToBottom();
   }
 
@@ -499,12 +502,11 @@ class _ChatBodyState extends State<_ChatBody> with WidgetsBindingObserver {
         'zip',
       ],
     );
-    final path = result?.files.single.path;
-    final name = result?.files.single.name;
-    if (path == null || name == null || !mounted) return;
-    context.read<ChatBloc>().add(
-      SendMediaMessage(filePath: path, fileName: name),
-    );
+    final file = result?.files.single;
+      if (file == null || !mounted) return;
+      context.read<ChatBloc>().add(
+        SendMediaMessage(fileBytes: file.bytes, filePath: kIsWeb ? null : file.path, fileName: file.name),
+      );
     _scrollToBottom();
   }
 

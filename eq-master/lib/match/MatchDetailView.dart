@@ -3,6 +3,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -1006,7 +1007,8 @@ class _MatchDetailViewState extends State<MatchDetailView>
     final result = await FilePicker.platform.pickFiles();
     if (result == null || result.files.isEmpty) return;
     final file = result.files.first;
-    if (file.path == null) return;
+    final String? path = kIsWeb ? null : file.path;
+    if (path == null && file.bytes == null) return;
     if (!mounted) return;
 
     final description = await _askDocumentDescription(file.name);
@@ -1022,13 +1024,12 @@ class _MatchDetailViewState extends State<MatchDetailView>
     setState(() => _uploading = true);
     try {
       final doc = await _docService.uploadDocument(
-        clubId,
-        teamState.selectedTeamId,
-        event.eventId,
-        file.path!,
-        file.name,
-        description,
-      );
+          clubId,
+          teamState.selectedTeamId,
+          event.eventId,
+          file,
+          description,
+        );
       if (mounted) {
         setState(() {
           _documents.insert(0, doc);
@@ -2585,22 +2586,35 @@ class _MatchDetailViewState extends State<MatchDetailView>
   }
 
   Future<void> _pickAndUploadStats(String? clubId, String teamId) async {
-    if (clubId == null || teamId.isEmpty || event.eventId.isEmpty) return;
+    print('DEBUG: _pickAndUploadStats started! clubId=$clubId, teamId=$teamId, eventId=${event.eventId}');
+    if (clubId == null || teamId.isEmpty || event.eventId.isEmpty) {
+      print('DEBUG: Returning early due to null/empty IDs!');
+      return;
+    }
 
+    print('DEBUG: Opening FilePicker...');
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['pdf'],
       withData: true,
     );
+    
+    print('DEBUG: FilePicker result: ${result?.files.length} files');
     if (result == null || result.files.isEmpty) return;
+    
     final file = result.files.first;
-    if (file.path == null && file.bytes == null) return;
+    final String? path = kIsWeb ? null : file.path;
+    print('DEBUG: Picked file: ${file.name}, has bytes: ${file.bytes != null}');
+    if (path == null && file.bytes == null) {
+      print('DEBUG: File has no path and no bytes, returning early!');
+      return;
+    }
 
     setState(() {
       _statsUploading = true;
       _statsError = null;
       _extractedRows = null;
-      _pendingPdfPath = file.path;
+      _pendingPdfPath = path;
       _pendingPdfBytes = file.bytes;
       _pendingPdfName = file.name;
     });
@@ -2609,7 +2623,7 @@ class _MatchDetailViewState extends State<MatchDetailView>
       final response = await _statsService.extractBasketballPdf(
         clubId,
         teamId,
-        file.path,
+        path,
         file.bytes,
         file.name,
       );
@@ -2630,6 +2644,7 @@ class _MatchDetailViewState extends State<MatchDetailView>
         await _showExtractedStatsDialog(clubId, teamId);
       }
     } catch (e) {
+      print('UPLOAD ERROR: $e');
       if (mounted) {
         setState(() {
           _statsUploading = false;

@@ -1,3 +1,5 @@
+import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
 import 'api_client.dart';
 
 /// A player video uploaded to the server, as returned by the backend.
@@ -101,18 +103,18 @@ class PlayerVideoService {
 
   /// Upload a video file. The backend stores it and returns its metadata.
   Future<PlayerVideoDto> uploadVideo(
-    String clubId,
-    String teamId,
-    String playerUserId,
-    String title,
-    String filePath,
-    String fileName,
-  ) async {
+      String clubId,
+      String teamId,
+      String playerUserId,
+      String title,
+      PlatformFile file,
+    ) async {
     final json = await _api.uploadFile(
       '/clubs/$clubId/teams/$teamId/players/$playerUserId/videos',
       fileField: 'file',
-      filePath: filePath,
-      fileName: fileName,
+        fileBytes: file.bytes,
+        filePath: kIsWeb ? null : file.path,
+        fileName: file.name,
       fields: {'title': title},
     );
     return PlayerVideoDto.fromJson(Map<String, dynamic>.from(json as Map));

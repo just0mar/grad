@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
@@ -670,7 +671,7 @@ class HomeView extends StatelessWidget {
     final bodyText = isDark ? Colors.white : const Color(0xFF001F14);
     final mutedText = isDark ? Colors.white70 : const Color(0xFF4D5B53);
     final resolvedImageUrl = ApiClient.resolveUrl(a.imageUrl);
-    final hasLocalImage = (a.imagePath ?? '').trim().isNotEmpty;
+    final hasLocalImage = a.image != null;
     final hasRemoteImage =
         resolvedImageUrl != null && resolvedImageUrl.isNotEmpty;
     final hasAnnouncementImage = hasLocalImage || hasRemoteImage;
@@ -755,9 +756,8 @@ class _EditableAnnouncementCardState extends State<_EditableAnnouncementCard>
     with SingleTickerProviderStateMixin {
   late final TextEditingController _captionController;
   late String _priority;
-  File? _pickedImageFile;
-  String? _pickedImageFileName;
-  bool _isEditing = false;
+  PlatformFile? _pickedImageFile;
+    bool _isEditing = false;
 
   AnimationController? _editCtrl;
   Animation<double>? _editFade;
@@ -790,8 +790,7 @@ class _EditableAnnouncementCardState extends State<_EditableAnnouncementCard>
       _captionController.text = widget.announcement.caption;
       _priority = widget.announcement.priority;
       _pickedImageFile = null;
-      _pickedImageFileName = null;
-      _isEditing = false;
+            _isEditing = false;
     }
   }
 
@@ -917,8 +916,7 @@ class _EditableAnnouncementCardState extends State<_EditableAnnouncementCard>
         _captionController.text = widget.announcement.caption;
         _priority = widget.announcement.priority;
         _pickedImageFile = null;
-        _pickedImageFileName = null;
-        _isEditing = false;
+                _isEditing = false;
       });
       return;
     }
@@ -928,8 +926,7 @@ class _EditableAnnouncementCardState extends State<_EditableAnnouncementCard>
           _captionController.text = widget.announcement.caption;
           _priority = widget.announcement.priority;
           _pickedImageFile = null;
-          _pickedImageFileName = null;
-          _isEditing = false;
+                    _isEditing = false;
         });
       }
     });
@@ -941,11 +938,9 @@ class _EditableAnnouncementCardState extends State<_EditableAnnouncementCard>
       allowMultiple: false,
     );
     final file = result?.files.single;
-    final path = file?.path;
-    if (path == null) return;
+    if (file == null) return;
     setState(() {
-      _pickedImageFile = File(path);
-      _pickedImageFileName = file?.name;
+      _pickedImageFile = file;
     });
   }
 
@@ -958,8 +953,8 @@ class _EditableAnnouncementCardState extends State<_EditableAnnouncementCard>
     widget.onSave(
       widget.announcement.copyWith(
         caption: caption,
-        imagePath: _pickedImageFile?.path,
-        imageFileName: _pickedImageFileName,
+        image: _pickedImageFile,
+        
         priority: _priority,
       ),
     );
@@ -984,7 +979,7 @@ class _EditableAnnouncementCardState extends State<_EditableAnnouncementCard>
     );
     final hasEditImage =
         _pickedImageFile != null ||
-        (widget.announcement.imagePath ?? '').trim().isNotEmpty ||
+        widget.announcement.image != null ||
         (widget.resolvedImageUrl ?? '').isNotEmpty;
     final priorityAccent = _priority.toLowerCase() == 'urgent'
         ? Colors.red
@@ -1157,9 +1152,7 @@ class _EditableAnnouncementCardState extends State<_EditableAnnouncementCard>
                               child: AspectRatio(
                                 aspectRatio: 16 / 8,
                                 child: _buildAnnouncementMedia(
-                                  imagePath:
-                                      _pickedImageFile?.path ??
-                                      widget.announcement.imagePath,
+                                  image: _pickedImageFile ?? widget.announcement.image,
                                   imageUrl: widget.resolvedImageUrl,
                                   accent: priorityAccent,
                                 ),
@@ -1190,7 +1183,7 @@ class _EditableAnnouncementCardState extends State<_EditableAnnouncementCard>
             child: AspectRatio(
               aspectRatio: 16 / 8,
               child: _buildAnnouncementMedia(
-                imagePath: widget.announcement.imagePath,
+                image: widget.announcement.image,
                 imageUrl: widget.resolvedImageUrl,
                 accent: priorityAccent,
               ),
@@ -1247,7 +1240,7 @@ class _EditableAnnouncementCardState extends State<_EditableAnnouncementCard>
   }
 
   Widget _imagePickerButton(Color accent, BuildContext context) {
-    final label = _pickedImageFileName ?? AppLocalizations.of(context).homePickImage;
+    final label = _pickedImageFile?.name ?? AppLocalizations.of(context).homePickImage;
     final hasPickedImage = _pickedImageFile != null;
 
     return InkWell(
@@ -1408,14 +1401,15 @@ class _EditableAnnouncementCardState extends State<_EditableAnnouncementCard>
   }
 
   Widget _buildAnnouncementMedia({
-    required String? imagePath,
+    required PlatformFile? image,
     required String? imageUrl,
     required Color accent,
   }) {
-    final localPath = imagePath?.trim();
-    if (localPath != null && localPath.isNotEmpty) {
-      return Image.file(
-        File(localPath),
+    if (image != null) {
+      return Image(
+        image: kIsWeb 
+            ? MemoryImage(image.bytes!) as ImageProvider
+            : FileImage(File(image.path!)),
         fit: BoxFit.cover,
         width: double.infinity,
         errorBuilder: (_, __, ___) => _announcementImageFallback(accent),

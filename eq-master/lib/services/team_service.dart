@@ -1,4 +1,5 @@
-import 'dart:io';
+import 'package:flutter/foundation.dart';
+import 'package:file_picker/file_picker.dart';
 
 import '../models/api_models.dart';
 import 'api_client.dart';
@@ -39,17 +40,16 @@ class TeamService {
   Future<TeamDto> createTeam(
     String clubId,
     Map<String, dynamic> request, {
-    File? image,
+    PlatformFile? image,
   }) async {
     final json = image == null
         ? await _api.post('/clubs/$clubId/teams', body: request)
         : await _api.uploadFile(
             '/clubs/$clubId/teams',
             fileField: 'image',
-            filePath: image.path,
-            fileName: image.uri.pathSegments.isEmpty
-                ? 'team-image'
-                : image.uri.pathSegments.last,
+            fileBytes: image.bytes,
+            filePath: kIsWeb ? null : image.path,
+            fileName: image.name,
             fields: request.map((key, value) => MapEntry(key, '$value')),
           );
     return TeamDto.fromJson(Map<String, dynamic>.from(json as Map));

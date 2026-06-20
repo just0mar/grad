@@ -23,17 +23,20 @@ public class MatchStatsPdfController : ControllerBase
     private readonly IWebHostEnvironment _env;
     private readonly IChatbotWebhookDispatcher _chatbotWebhook;
     private readonly IConfiguration _config;
+    private readonly IFileStorageService _storage;
 
     public MatchStatsPdfController(
         AppDbContext db,
         IWebHostEnvironment env,
         IChatbotWebhookDispatcher chatbotWebhook,
-        IConfiguration config)
+        IConfiguration config,
+        IFileStorageService storage)
     {
         _db = db;
         _env = env;
         _chatbotWebhook = chatbotWebhook;
         _config = config;
+        _storage = storage;
     }
 
     /// <summary>Attach (or replace) the raw stats PDF for a recorded match.</summary>
@@ -68,19 +71,24 @@ public class MatchStatsPdfController : ControllerBase
             .FirstOrDefaultAsync(s => s.TeamId == teamId && s.EventId == eventId);
         if (stats == null) return NotFound(new { error = "Match stats not found. Record stats before attaching a PDF." });
 
-        // One subfolder per PDF type, e.g. uploads/match-stats/{eventId}/plus_minus/.
-        var uploadsDir = Path.Combine(_env.WebRootPath, "uploads", "match-stats", eventId.ToString(), pdfTypeValue);
-        Directory.CreateDirectory(uploadsDir);
-
-        var storedName = $"{Guid.NewGuid()}{ext}";
-        var storagePath = Path.Combine(uploadsDir, storedName);
-        await using (var stream = new FileStream(storagePath, FileMode.Create))
+        // Use a temporary file for pdftotext extraction
+        var tempPath = Path.GetTempFileName();
+        try
         {
-            await file.CopyToAsync(stream);
-        }
+            await using (var stream = new FileStream(tempPath, FileMode.Create))
+            {
+                await file.CopyToAsync(stream);
+            }
 
-        var contentType = string.IsNullOrWhiteSpace(file.ContentType) ? "application/pdf" : file.ContentType;
-        var extractedText = await TryExtractPdfTextAsync(storagePath);
+            var contentType = string.IsNullOrWhiteSpace(file.ContentType) ? "application/pdf" : file.ContentType;
+            var extractedText = await TryExtractPdfTextAsync(tempPath);
+
+            var category = $"match-stats/{eventId}/{pdfTypeValue}";
+            string storagePath;
+            await using (var readStream = new FileStream(tempPath, FileMode.Open, FileAccess.Read))
+            {
+                storagePath = await _storage.SaveFileAsync(readStream, file.FileName, category, contentType);
+            }
 
         // Upsert the document of this type (replace semantics, best-effort cleanup of the old file).
         var doc = stats.Documents.FirstOrDefault(d => string.Equals(d.PdfType, pdfTypeValue, StringComparison.OrdinalIgnoreCase));
@@ -97,7 +105,7 @@ public class MatchStatsPdfController : ControllerBase
         }
         else if (!string.IsNullOrEmpty(doc.StoragePath) && doc.StoragePath != storagePath)
         {
-            TryDelete(doc.StoragePath);
+            await _storage.DeleteFileAsync(doc.StoragePath);
         }
         doc.StoragePath = storagePath;
         doc.FileName = file.FileName;
@@ -110,7 +118,7 @@ public class MatchStatsPdfController : ControllerBase
         if (pdfTypeValue == MatchStatsPdfType.BoxScore)
         {
             if (!string.IsNullOrEmpty(stats.RawPdfPath) && stats.RawPdfPath != storagePath)
-                TryDelete(stats.RawPdfPath);
+                await _storage.DeleteFileAsync(stats.RawPdfPath);
 
             stats.RawPdfPath = storagePath;
             stats.RawPdfFileName = file.FileName;
@@ -138,6 +146,12 @@ public class MatchStatsPdfController : ControllerBase
             HasExtractedText = !string.IsNullOrEmpty(doc.ExtractedText),
             StoredTypes = stats.Documents.Select(d => d.PdfType).OrderBy(t => t).ToArray(),
         });
+        }
+        finally
+        {
+            if (System.IO.File.Exists(tempPath))
+                System.IO.File.Delete(tempPath);
+        }
     }
 
     /// <summary>Download the stored raw stats PDF.</summary>
@@ -152,13 +166,16 @@ public class MatchStatsPdfController : ControllerBase
             .FirstOrDefaultAsync(s => s.TeamId == teamId && s.EventId == eventId);
         if (stats == null || string.IsNullOrEmpty(stats.RawPdfPath))
             return NotFound(new { error = "No PDF stored for this match." });
-        if (!System.IO.File.Exists(stats.RawPdfPath))
+        if (stats.RawPdfPath.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+        {
+            return Redirect(stats.RawPdfPath);
+        }
+
+        var fullPath = Path.Combine(_env.WebRootPath, stats.RawPdfPath.TrimStart('/'));
+        if (!System.IO.File.Exists(fullPath))
             return NotFound(new { error = "File not found on server." });
 
-        return PhysicalFile(
-            stats.RawPdfPath,
-            stats.RawPdfContentType ?? "application/pdf",
-            stats.RawPdfFileName ?? "match-stats.pdf");
+        return PhysicalFile(fullPath, stats.RawPdfContentType ?? "application/pdf", stats.RawPdfFileName ?? "stats.pdf");
     }
 
     /// <summary>Download a stored stats PDF of a specific type (box_score | plus_minus | lineup | play_by_play).</summary>
@@ -181,10 +198,16 @@ public class MatchStatsPdfController : ControllerBase
         var doc = stats.Documents.FirstOrDefault(d => string.Equals(d.PdfType, pdfTypeValue, StringComparison.OrdinalIgnoreCase));
         if (doc == null || string.IsNullOrEmpty(doc.StoragePath))
             return NotFound(new { error = $"No {pdfTypeValue} PDF stored for this match." });
-        if (!System.IO.File.Exists(doc.StoragePath))
+        if (doc.StoragePath.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+        {
+            return Redirect(doc.StoragePath);
+        }
+
+        var fullPath = Path.Combine(_env.WebRootPath, doc.StoragePath.TrimStart('/'));
+        if (!System.IO.File.Exists(fullPath))
             return NotFound(new { error = "File not found on server." });
 
-        return PhysicalFile(doc.StoragePath, doc.ContentType ?? "application/pdf", doc.FileName ?? $"{pdfTypeValue}.pdf");
+        return PhysicalFile(fullPath, doc.ContentType ?? "application/pdf", doc.FileName ?? $"{pdfTypeValue}.pdf");
     }
 
     /// <summary>

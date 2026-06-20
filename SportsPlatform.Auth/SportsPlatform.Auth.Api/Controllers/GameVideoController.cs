@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using SportsPlatform.Auth.Core.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Net.Http.Headers;
 using SportsPlatform.Auth.Api.Services;
@@ -23,16 +24,16 @@ public class GameVideoController : ControllerBase
     };
 
     private readonly AppDbContext _db;
-    private readonly IWebHostEnvironment _env;
+    private readonly IFileStorageService _storage;
     private readonly Mp4StreamingOptimizer _mp4Optimizer;
 
     public GameVideoController(
         AppDbContext db,
-        IWebHostEnvironment env,
+        IFileStorageService storage,
         Mp4StreamingOptimizer mp4Optimizer)
     {
         _db = db;
-        _env = env;
+        _storage = storage;
         _mp4Optimizer = mp4Optimizer;
     }
 
@@ -109,17 +110,18 @@ public class GameVideoController : ControllerBase
         if (!CanManageVideos(role) && !await IsClubManagerAsync(clubId, userId.Value))
             return Forbid();
 
-        var uploadsDir = Path.Combine(_env.WebRootPath, "uploads", "videos", eventId.ToString());
-        Directory.CreateDirectory(uploadsDir);
-
-        var storedName = $"{Guid.NewGuid()}{extension}";
-        var storagePath = Path.Combine(uploadsDir, storedName);
-
-        await using (var stream = new FileStream(storagePath, FileMode.Create))
+        var tempPath = Path.GetTempFileName();
+        await using (var stream = new FileStream(tempPath, FileMode.Create))
         {
             await file.CopyToAsync(stream);
         }
-        await _mp4Optimizer.OptimizeAsync(storagePath);
+        await _mp4Optimizer.OptimizeAsync(tempPath);
+        
+        await using var optimizedStream = new FileStream(tempPath, FileMode.Open);
+        var storagePath = await _storage.SaveFileAsync(optimizedStream, file.FileName, "videos/$eventId", ResolveVideoContentType(file.ContentType, extension));
+        optimizedStream.Close();
+        System.IO.File.Delete(tempPath);
+        var storedName = file.FileName;
 
         var cleanTitle = title?.Trim();
         if (string.IsNullOrEmpty(cleanTitle))
@@ -162,19 +164,7 @@ public class GameVideoController : ControllerBase
             .FirstOrDefaultAsync(v => v.VideoId == videoId && v.EventId == eventId && v.TeamId == teamId);
         if (video == null) return NotFound(new { error = "Video not found." });
 
-        if (!System.IO.File.Exists(video.StoragePath))
-            return NotFound(new { error = "File not found on server." });
-        await _mp4Optimizer.OptimizeAsync(video.StoragePath);
-
-        // Correct legacy/incorrect stored content types (e.g. octet-stream) so
-        // the native player recognises the format.
-        var contentType = (video.ContentType?.StartsWith("video/", StringComparison.OrdinalIgnoreCase) ?? false)
-            ? video.ContentType!
-            : ResolveVideoContentType(video.ContentType, Path.GetExtension(video.FileName));
-        Response.Headers[HeaderNames.AcceptRanges] = "bytes";
-        Response.Headers[HeaderNames.CacheControl] = "private, max-age=3600";
-        // enableRangeProcessing lets the player seek and stream without a full download.
-        return PhysicalFile(video.StoragePath, contentType, enableRangeProcessing: true);
+        return Redirect(video.StoragePath);
     }
 
     [HttpDelete("clubs/{clubId:guid}/teams/{teamId:guid}/events/{eventId:guid}/videos/{videoId:guid}")]
@@ -192,8 +182,8 @@ public class GameVideoController : ControllerBase
         if (video.AddedByUserId != userId.Value && !CanManageVideos(role) && !isManager)
             return Forbid();
 
-        video.DeletedAt = DateTime.UtcNow;
-        video.UpdatedAt = DateTime.UtcNow;
+        await _storage.DeleteFileAsync(video.StoragePath);
+        _db.GameVideos.Remove(video);
         await _db.SaveChangesAsync();
 
         return Ok(new { message = "Video removed." });

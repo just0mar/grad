@@ -735,7 +735,7 @@ class QuestionService:
                 chronological_messages=chronological_messages,
             )
             groq_rewrite = False
-            if not deterministic_rewrite and is_follow_up(question):
+            if not deterministic_rewrite and chronological_messages:
                 with timer.stage("rewrite_groq"):
                     rewritten_question, groq_rewrite = self._rewrite_followup_with_groq(
                         question,
@@ -970,7 +970,7 @@ class QuestionService:
                 semantic_memories,
                 chronological_messages=chronological_messages,
             )
-            if not deterministic_rewrite and is_follow_up(question):
+            if not deterministic_rewrite and chronological_messages:
                 rewritten_question, _ = self._rewrite_followup_with_groq(
                     question,
                     chronological_messages,

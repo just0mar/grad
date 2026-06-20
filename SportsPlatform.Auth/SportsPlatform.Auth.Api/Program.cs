@@ -126,7 +126,15 @@ builder.Services.AddCors(options =>
 
 // ── Services ────────────────────────────────────────────────
 builder.Services.AddScoped<ITokenService, TokenService>();
-builder.Services.AddScoped<IFileStorageService, LocalFileStorageService>();
+var storageProvider = builder.Configuration["Storage:Provider"];
+if (storageProvider == "S3")
+{
+    builder.Services.AddScoped<IFileStorageService, S3CompatibleStorageService>();
+}
+else
+{
+    builder.Services.AddScoped<IFileStorageService, LocalFileStorageService>();
+}
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ITeamService, TeamService>();
 builder.Services.AddScoped<IClubService, ClubService>();

@@ -1,3 +1,5 @@
+import 'package:file_picker/file_picker.dart';
+
 class Announcement {
   final String id;
   final String authorName;
@@ -6,8 +8,7 @@ class Announcement {
   final String? authorUserId;
   final String caption;
   final String? imageUrl;
-  final String? imagePath;
-  final String? imageFileName;
+  final PlatformFile? image;
   final String priority;
   final bool isEmergency;
 
@@ -19,8 +20,7 @@ class Announcement {
     this.authorUserId,
     required this.caption,
     this.imageUrl,
-    this.imagePath,
-    this.imageFileName,
+    this.image,
     String? priority,
     bool? isEmergency,
   }) : priority = priority ?? (isEmergency == true ? 'Urgent' : 'Normal'),
@@ -38,8 +38,7 @@ class Announcement {
     String? authorUserId,
     String? caption,
     String? imageUrl,
-    String? imagePath,
-    String? imageFileName,
+    PlatformFile? image,
     String? priority,
     bool? isEmergency,
     bool clearImageUrl = false,
@@ -52,8 +51,7 @@ class Announcement {
       authorUserId: authorUserId ?? this.authorUserId,
       caption: caption ?? this.caption,
       imageUrl: clearImageUrl ? null : imageUrl ?? this.imageUrl,
-      imagePath: imagePath ?? this.imagePath,
-      imageFileName: imageFileName ?? this.imageFileName,
+      image: image ?? this.image,
       priority: priority ?? this.priority,
       isEmergency: isEmergency ?? this.isEmergency,
     );

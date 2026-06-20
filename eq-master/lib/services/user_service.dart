@@ -1,4 +1,5 @@
-import 'dart:io';
+import 'package:flutter/foundation.dart';
+import 'package:file_picker/file_picker.dart';
 
 import '../models/api_models.dart';
 import 'api_client.dart';
@@ -26,14 +27,13 @@ class UserService {
     return UserInfo.fromJson(Map<String, dynamic>.from(json as Map));
   }
 
-  Future<String> uploadProfileImage(File image) async {
+  Future<String> uploadProfileImage(PlatformFile image) async {
     final json = await _api.uploadFile(
       '/users/me/profile-image',
       fileField: 'image',
-      filePath: image.path,
-      fileName: image.uri.pathSegments.isEmpty
-          ? 'profile-image'
-          : image.uri.pathSegments.last,
+      fileBytes: image.bytes,
+      filePath: kIsWeb ? null : image.path,
+      fileName: image.name,
     );
 
     if (json is Map && json['profileImageUrl'] != null) {

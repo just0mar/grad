@@ -87,13 +87,12 @@ class _MedicalRecordDetailViewState extends State<MedicalRecordDetailView> {
       allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx'],
       allowMultiple: false,
     );
-    final path = result?.files.single.path;
-    if (path == null) return;
+    final file = result?.files.single;
+    if (file == null) return;
 
     setState(() => _isUploading = true);
     try {
-      final fileName = result!.files.single.name;
-      await _medicalService.uploadDocument(request.requestId, path, fileName);
+      await _medicalService.uploadDocument(request.requestId, file);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(AppLocalizations.of(context).documentUploadedSuccess)),

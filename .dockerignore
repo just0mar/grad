@@ -1,0 +1,17 @@
+.git
+.idea
+.vscode
+node_modules
+venv
+venv_fiba
+venv_chatbot
+venv_extractor
+**/bin
+**/obj
+**/build
+.dart_tool
+eq-master/build
+eq-master/.dart_tool
+eq-master/.pub-cache
+almost_done
+*.log

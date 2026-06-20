@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
@@ -33,8 +34,7 @@ class _AddAnnouncementViewState extends State<AddAnnouncementView> with TickerPr
   final TextEditingController _captionController = TextEditingController();
 
   String _priority = 'Normal';
-  File? _imageFile;
-  String? _imageFileName;
+  PlatformFile? _imageFile;
 
   @override
   void dispose() {
@@ -130,8 +130,7 @@ class _AddAnnouncementViewState extends State<AddAnnouncementView> with TickerPr
                                   authorRole: widget.authorRole,
                                   authorImage: widget.authorImage,
                                   caption: _captionController.text.trim(),
-                                  imagePath: _imageFile?.path,
-                                  imageFileName: _imageFileName,
+                                  image: _imageFile,
                                   priority: _priority,
                                 );
                                 Navigator.pop(context);
@@ -161,11 +160,9 @@ class _AddAnnouncementViewState extends State<AddAnnouncementView> with TickerPr
           allowMultiple: false,
         );
         final file = result?.files.single;
-        final path = file?.path;
-        if (path == null) return;
+        if (file == null) return;
         setState(() {
-          _imageFile = File(path);
-          _imageFileName = file?.name;
+          _imageFile = file;
         });
       },
       child: Container(
@@ -194,8 +191,10 @@ class _AddAnnouncementViewState extends State<AddAnnouncementView> with TickerPr
               )
             : ClipRRect(
                 borderRadius: BorderRadius.circular(18),
-                child: Image.file(
-                  _imageFile!,
+                child: Image(
+                  image: kIsWeb
+                      ? MemoryImage(_imageFile!.bytes!) as ImageProvider
+                      : FileImage(File(_imageFile!.path!)),
                   fit: BoxFit.cover,
                   width: double.infinity,
                   height: double.infinity,

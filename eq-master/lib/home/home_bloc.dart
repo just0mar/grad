@@ -212,8 +212,7 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
             'imageUrl': event.announcement.imageUrl,
           'priority': event.announcement.priority,
         },
-        imagePath: event.announcement.imagePath,
-        imageFileName: event.announcement.imageFileName,
+        image: event.announcement.image,
       );
       final created = Announcement(
         id: dto.announcementId,
@@ -287,8 +286,7 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
             'imageUrl': event.announcement.imageUrl,
           'priority': event.announcement.priority,
         },
-        imagePath: event.announcement.imagePath,
-        imageFileName: event.announcement.imageFileName,
+        image: event.announcement.image,
       );
       final updated = event.announcement.copyWith(
         authorName: dto.creatorName.isNotEmpty

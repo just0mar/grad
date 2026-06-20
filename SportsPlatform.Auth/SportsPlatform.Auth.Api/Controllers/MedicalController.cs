@@ -103,8 +103,7 @@ public class MedicalController : ControllerBase
             stream,
             file.FileName,
             file.ContentType,
-            file.Length,
-            _environment.WebRootPath);
+            file.Length);
 
         return Ok(result);
     }
@@ -115,8 +114,8 @@ public class MedicalController : ControllerBase
         var userId = GetCallerUserId();
         if (userId == null) return Unauthorized(new { error = "Invalid token." });
 
-        var file = await _medicalService.GetMedicalDocumentDownloadAsync(requestId, userId.Value, _environment.WebRootPath);
-        return PhysicalFile(file.FilePath, file.ContentType, file.FileName);
+        var file = await _medicalService.GetMedicalDocumentDownloadAsync(requestId, userId.Value);
+        return Redirect(file.FilePath);
     }
 
     [HttpGet("players/me/medical")]

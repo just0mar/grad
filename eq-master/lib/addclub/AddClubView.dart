@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
@@ -132,12 +133,12 @@ class _AddClubContentState extends State<_AddClubContent>
                                   type: FileType.image,
                                   allowMultiple: false,
                                 );
-                                final path = result?.files.single.path;
-                                if (path == null) return;
+                                final file = result?.files.single;
+                                if (file == null) return;
                                 if (!context.mounted) return;
                                 context
                                     .read<AddClubBloc>()
-                                    .add(ClubLogoSelected(File(path)));
+                                    .add(ClubLogoSelected(file));
                               },
                             ),
                             if (logoMissing) ...[
@@ -351,7 +352,7 @@ class _AddClubContentState extends State<_AddClubContent>
 }
 
 class _LogoPicker extends StatelessWidget {
-  final File? file;
+  final PlatformFile? file;
   final bool hasError;
   final VoidCallback onTap;
 
@@ -376,7 +377,11 @@ class _LogoPicker extends StatelessWidget {
               child: CircleAvatar(
                 radius: 54,
                 backgroundColor: const Color(0xFF1B3A2D),
-                backgroundImage: file == null ? null : FileImage(file!),
+                backgroundImage: file == null 
+                    ? null 
+                    : (kIsWeb 
+                        ? MemoryImage(file!.bytes!) as ImageProvider
+                        : FileImage(File(file!.path!))),
                 child: file == null
                     ? const Icon(
                         Icons.image_outlined,
