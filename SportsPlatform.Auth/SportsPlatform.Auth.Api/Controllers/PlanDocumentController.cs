@@ -122,10 +122,17 @@ public class PlanDocumentController : ControllerBase
         if (!await CanViewTeamAsync(doc.Plan.Team.ClubId, doc.Plan.TeamId, userId.Value))
             return Forbid();
 
-        if (!System.IO.File.Exists(doc.StoragePath))
+        if (doc.StoragePath.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
+            doc.StoragePath.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+        {
+            return Redirect(doc.StoragePath);
+        }
+
+        var fullPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", doc.StoragePath.TrimStart('/'));
+        if (!System.IO.File.Exists(fullPath))
             return NotFound(new { error = "File not found on server." });
 
-        return PhysicalFile(doc.StoragePath, doc.ContentType, doc.OriginalFileName);
+        return PhysicalFile(fullPath, doc.ContentType, doc.OriginalFileName);
     }
 
     [HttpDelete("clubs/{clubId:guid}/teams/{teamId:guid}/plans/{planId:guid}/documents/{documentId:guid}")]

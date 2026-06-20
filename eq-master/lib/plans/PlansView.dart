@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'dart:io';
+import 'package:file_picker/file_picker.dart';
 import 'dart:math';
 
 import 'package:eqq/addplans/AddPlansView.dart';
@@ -316,7 +317,7 @@ class _PlansContent extends StatelessWidget {
     );
     if (result is! Map<String, dynamic>) return;
     final attachments =
-        (result['attachmentPaths'] as List?)?.cast<String>() ?? [];
+        (result['attachments'] as List?)?.cast<PlatformFile>() ?? [];
     final discardedDocumentIds =
         (result['discardedDocumentIds'] as List?)?.cast<String>() ?? [];
     final eventCategory = result['category']?.toString() ?? 'Offensive';
@@ -328,7 +329,7 @@ class _PlansContent extends StatelessWidget {
           description: result['description']?.toString() ?? '',
           visibility: result['visibility']?.toString() ?? 'Draft',
           category: eventCategory,
-          attachmentPaths: attachments,
+          attachments: attachments,
           tacticalBoardData: tacticalBoardData,
         ),
       );
@@ -340,7 +341,7 @@ class _PlansContent extends StatelessWidget {
           description: result['description']?.toString() ?? '',
           visibility: result['visibility']?.toString() ?? 'Draft',
           category: eventCategory,
-          attachmentPaths: attachments,
+          attachments: attachments,
           discardedDocumentIds: discardedDocumentIds,
           tacticalBoardData: tacticalBoardData,
         ),

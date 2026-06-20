@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:equatable/equatable.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../models/api_models.dart';
@@ -26,14 +27,14 @@ class CreatePlan extends PlansEvent {
   final String description;
   final String visibility;
   final String category;
-  final List<String> attachmentPaths;
+  final List<PlatformFile> attachments;
   final String? tacticalBoardData;
   CreatePlan({
     required this.title,
     required this.description,
     required this.visibility,
     this.category = 'Offensive',
-    this.attachmentPaths = const [],
+    this.attachments = const [],
     this.tacticalBoardData,
   });
 
@@ -43,7 +44,7 @@ class CreatePlan extends PlansEvent {
     description,
     visibility,
     category,
-    attachmentPaths,
+    attachments,
     tacticalBoardData,
   ];
 }
@@ -54,7 +55,7 @@ class UpdatePlan extends PlansEvent {
   final String description;
   final String visibility;
   final String category;
-  final List<String> attachmentPaths;
+  final List<PlatformFile> attachments;
   final List<String> discardedDocumentIds;
   final String? tacticalBoardData;
 
@@ -64,7 +65,7 @@ class UpdatePlan extends PlansEvent {
     required this.description,
     required this.visibility,
     required this.category,
-    this.attachmentPaths = const [],
+    this.attachments = const [],
     this.discardedDocumentIds = const [],
     this.tacticalBoardData,
   });
@@ -76,7 +77,7 @@ class UpdatePlan extends PlansEvent {
     description,
     visibility,
     category,
-    attachmentPaths,
+    attachments,
     discardedDocumentIds,
     tacticalBoardData,
   ];
@@ -178,15 +179,14 @@ class PlansBloc extends Bloc<PlansEvent, PlansState> {
 
       // Upload attachments if any
       final failedUploads = <String>[];
-      for (final path in event.attachmentPaths) {
-        final fileName = path.split(RegExp(r'[/\\]')).last;
+      for (final file in event.attachments) {
+        final fileName = file.name;
         try {
           await _planService.uploadPlanDocument(
             clubId,
             teamId,
             created.planId,
-            path,
-            fileName,
+            file,
           );
         } catch (_) {
           failedUploads.add(fileName);
@@ -194,7 +194,7 @@ class PlansBloc extends Bloc<PlansEvent, PlansState> {
       }
 
       // Re-fetch to get the plan with documents populated
-      if (event.attachmentPaths.isNotEmpty) {
+      if (event.attachments.isNotEmpty) {
         final plans = await _planService.getTeamPlans(clubId, teamId);
         emit(state.copyWith(
           plans: plans,
@@ -252,15 +252,14 @@ class PlansBloc extends Bloc<PlansEvent, PlansState> {
       }
 
       final failedUploads = <String>[];
-      for (final path in event.attachmentPaths) {
-        final fileName = path.split(RegExp(r'[/\\]')).last;
+      for (final file in event.attachments) {
+        final fileName = file.name;
         try {
           await _planService.uploadPlanDocument(
             clubId,
             teamId,
             updated.planId,
-            path,
-            fileName,
+            file,
           );
         } catch (_) {
           failedUploads.add(fileName);

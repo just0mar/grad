@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("SportsPlatform.Auth.Infrastructure")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+a1c33fa66fc0eb85e07e282236e7c8220de887df")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+33e4fd83d1ada2d286a5cf51381f842cd7ca7d1a")]
 [assembly: System.Reflection.AssemblyProductAttribute("SportsPlatform.Auth.Infrastructure")]
 [assembly: System.Reflection.AssemblyTitleAttribute("SportsPlatform.Auth.Infrastructure")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

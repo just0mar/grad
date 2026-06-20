@@ -20,7 +20,7 @@ services:
       context: ./SportsPlatform.Auth/SportsPlatform.Auth.Api/scripts
       dockerfile: Dockerfile.stats-extractor
     container_name: equipex_stats_extractor
-    command: ["uvicorn", "stats_extractor_api:app", "--host", "0.0.0.0", "--port", "8102"]
+    command: uvicorn stats_extractor_api:app --host 0.0.0.0 --port 8102
     expose:
       - "8102"
     networks:
@@ -36,8 +36,9 @@ services:
       - ASPNETCORE_URLS=http://+:5000
       - ConnectionStrings__DefaultConnection=Host=postgres_db;Port=5432;Database=equ;Username=postgres;Password=159357
       - StatsExtractor__BaseUrl=http://stats_extractor:8102
-      # We map Microservice to host.docker.internal to reach the AI compose network on localhost during testing
-      - Microservice__BaseUrl=http://host.docker.internal:8000
+      - Microservice__BaseUrl=http://34.154.162.32:8000
+      - Storage__Provider=S3
+      - Storage__BucketName=equipex-media-storage
     ports:
       - "5000:5000"
     depends_on:

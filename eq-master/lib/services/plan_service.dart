@@ -1,4 +1,6 @@
 import 'dart:typed_data';
+import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 import '../models/api_models.dart';
 import 'api_client.dart';
@@ -47,14 +49,14 @@ class PlanService {
     String clubId,
     String teamId,
     String planId,
-    String filePath,
-    String fileName,
+    PlatformFile file,
   ) {
     return _api.uploadFile(
       '/clubs/$clubId/teams/$teamId/plans/$planId/documents',
       fileField: 'file',
-      filePath: filePath,
-      fileName: fileName,
+      fileBytes: file.bytes,
+      filePath: kIsWeb ? null : file.path,
+      fileName: file.name,
     );
   }
 

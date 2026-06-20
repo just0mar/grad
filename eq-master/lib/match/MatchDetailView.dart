@@ -953,15 +953,13 @@ class _MatchDetailViewState extends State<MatchDetailView>
             'visibility': 'TeamVisible',
           });
       final attachments =
-          (result['attachmentPaths'] as List?)?.cast<String>() ?? [];
-      for (final path in attachments) {
-        final fileName = path.split(RegExp(r'[/\\]')).last;
+          (result['attachments'] as List?)?.cast<PlatformFile>() ?? [];
+      for (final file in attachments) {
         await _planService.uploadPlanDocument(
           clubId,
           teamState.selectedTeamId,
           created.planId,
-          path,
-          fileName,
+          file,
         );
       }
       await _attachPlan(clubId, teamState.selectedTeamId, created.planId);

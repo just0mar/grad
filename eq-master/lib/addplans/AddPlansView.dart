@@ -232,10 +232,7 @@ class _AddPlanScreenState extends State<AddPlanScreen>
       'description': _descriptionController.text.trim(),
       'visibility': _visibility,
       'category': _category,
-      'attachmentPaths': _attachedFiles
-          .map((f) => f.path ?? '')
-          .where((p) => p.isNotEmpty)
-          .toList(),
+      'attachments': _attachedFiles,
       'discardedDocumentIds': _discardedDocumentIds.toList(),
       'tacticalBoardData': _serialiseBoard(),
     });

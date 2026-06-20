@@ -129,7 +129,7 @@ builder.Services.AddScoped<ITokenService, TokenService>();
 var storageProvider = builder.Configuration["Storage:Provider"];
 if (storageProvider == "S3")
 {
-    builder.Services.AddScoped<IFileStorageService, S3CompatibleStorageService>();
+builder.Services.AddScoped<IFileStorageService, GoogleCloudStorageService>();
 }
 else
 {

@@ -37,10 +37,17 @@ public class InternalMatchStatsController : ControllerBase
             .FirstOrDefaultAsync(d => d.MatchStatsId == matchStatsId && d.PdfType == pdfTypeValue);
         if (doc == null || string.IsNullOrEmpty(doc.StoragePath))
             return NotFound(new { error = $"No {pdfTypeValue} PDF stored for this match." });
-        if (!System.IO.File.Exists(doc.StoragePath))
+        if (doc.StoragePath.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
+            doc.StoragePath.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+        {
+            return Redirect(doc.StoragePath);
+        }
+
+        var fullPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", doc.StoragePath.TrimStart('/'));
+        if (!System.IO.File.Exists(fullPath))
             return NotFound(new { error = "File not found on server." });
 
-        return PhysicalFile(doc.StoragePath, doc.ContentType ?? "application/pdf", doc.FileName ?? $"{pdfTypeValue}.pdf");
+        return PhysicalFile(fullPath, doc.ContentType ?? "application/pdf", doc.FileName ?? $"{pdfTypeValue}.pdf");
     }
 
     /// <summary>

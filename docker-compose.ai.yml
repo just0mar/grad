@@ -20,7 +20,7 @@ services:
     environment:
       - GROQ_API_KEY=${GROQ_API_KEY}
       - GROQ_MODEL=llama-3.3-70b-versatile
-      - APP_API_BASE_URL=http://host.docker.internal:5000
+      - APP_API_BASE_URL=http://34.154.188.123:5000
       - MICROSERVICE_SERVICE_TOKEN=equipex-local-dev-service-token-2026
       - REQUIRE_SERVICE_TOKEN=0
       - PREDICTION_SERVICE_BASE_URL=http://prediction_model:8101

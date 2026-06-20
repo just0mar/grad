@@ -14,6 +14,9 @@ public class NotificationMaintenanceService : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        // Wait for database migrations to complete before first run
+        await Task.Delay(TimeSpan.FromSeconds(30), stoppingToken);
+        
         while (!stoppingToken.IsCancellationRequested)
         {
             await RunOnceAsync(stoppingToken);
