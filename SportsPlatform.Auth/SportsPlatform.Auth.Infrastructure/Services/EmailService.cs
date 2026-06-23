@@ -47,8 +47,10 @@ public class EmailService : IEmailService
             Text = $"""
                 <h2>Equipex Invitation</h2>
                 <p>{inviterName} invited you to join <strong>{clubOrTeamName}</strong> as <strong>{roleName}</strong>.</p>
-                <p>Your invitation token: <code>{invitationToken}</code></p>
-                <p>Accept using the Equipex app with this token before it expires.</p>
+                <p>Click the link below to open the Equipex app and accept your invitation:</p>
+                <p><a href="https://equipex.io/invite?token={invitationToken}" style="padding: 10px 20px; background-color: #4CAF50; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;">Accept Invitation</a></p>
+                <br>
+                <p><small>If you don't have the app installed, you will be redirected to download it. Alternatively, your token is: <code>{invitationToken}</code></small></p>
                 """
         };
 
