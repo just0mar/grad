@@ -129,11 +129,12 @@ _ROSTER_PATTERNS = (
 # availability) BEFORE the box-score squad analytics. If no model is trained yet,
 # the lane returns None and we fall through to analytics squad recommendation.
 _LINEUP_PATTERNS = (
-    r"\b(?:suggest|recommend|pick|build|set|choose|propose)\b[\w\s]{0,25}\blineup\b",
-    r"\bstarting\s+(?:five|lineup|line-?up|5)\b",
+    r"\b(?:suggest|recommend|pick|build|set|choose|propose)\b[\w\s]{0,25}\b(?:line-?up|squad|squat)\b",
+    r"\bstarting\s+(?:five|line-?up|squad|5)\b",
     r"\bwho\s+should\s+start\b",
-    r"\bbest\s+(?:lineup|line-?up|starting)\b",
+    r"\bbest\s+(?:line-?up|starting|squad|squat)\b",
     r"\bline-?up\b",
+    r"\b(?:game|match|team)\s+(?:squad|squat)\b",
 )
 
 # Upcoming schedule / fixture / "when do we play" questions. These are date
