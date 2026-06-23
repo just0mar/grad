@@ -236,7 +236,23 @@ public class CoachingPlanService : ICoachingPlanService
         lineup.Visibility = ParseVisibility(request.Visibility, lineup.Visibility);
         lineup.UpdatedAt = DateTime.UtcNow;
 
-        _db.CoachingLineupPlayers.RemoveRange(lineup.Players);
+        // Delete ALL existing lineup players directly via SQL to bypass the
+        // global query filter (which hides rows for soft-deleted users).
+        // Without this, EF only tracks the filtered subset and the
+        // RemoveRange + re-insert can hit a unique-index or concurrency error.
+        await _db.Database.ExecuteSqlRawAsync(
+            "DELETE FROM coaching_lineup_player WHERE lineup_id = {0}", lineupId);
+
+        // Detach any tracked CoachingLineupPlayer entities so EF doesn't
+        // try to DELETE them again on SaveChanges.
+        foreach (var entry in _db.ChangeTracker.Entries<CoachingLineupPlayer>()
+                     .Where(e => e.Entity.LineupId == lineupId)
+                     .ToList())
+        {
+            entry.State = Microsoft.EntityFrameworkCore.EntityState.Detached;
+        }
+        lineup.Players.Clear();
+
         ApplyLineupPlayers(lineup, request.Players);
 
         await _db.SaveChangesAsync();
