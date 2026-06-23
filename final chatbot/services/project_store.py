@@ -100,17 +100,22 @@ class ProjectStore:
         folder = self.pdf_dir(project_id)
         return len(list(folder.glob("*.pdf"))) if folder.exists() else 0
 
+    def predictions_csv(self, project_id: str) -> Path:
+        return self.project_dir(project_id) / "model" / "test_predictions.csv"
+
     def status(self, project_id: str) -> dict[str, object]:
         self.ensure_project(project_id)
         has_box = self.box_score_csv(project_id).exists()
         has_chunks = self.chunks_csv(project_id).exists()
         has_chroma = self.chroma_pdf_index_dir(project_id).exists()
+        has_predictions = self.predictions_csv(project_id).exists()
         return {
             "project_id": project_id,
             "pdf_count": self.pdf_count(project_id),
             "has_box_score_csv": has_box,
             "has_chunks_csv": has_chunks,
             "has_chroma_index": has_chroma,
+            "has_predictions_csv": has_predictions,
             "status": "ready" if has_box and has_chunks else "needs_rebuild",
         }
 

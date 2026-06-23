@@ -73,6 +73,7 @@ class ProjectStatusResponse(BaseModel):
     has_box_score_csv: bool
     has_chunks_csv: bool
     has_chroma_index: bool
+    has_predictions_csv: bool
     status: str
 
 

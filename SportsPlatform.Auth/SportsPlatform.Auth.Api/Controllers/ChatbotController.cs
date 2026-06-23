@@ -338,9 +338,9 @@ public class ChatbotController : ControllerBase
             var status = await statusResp.Content.ReadFromJsonAsync<MicroserviceProjectStatus>(
                 cancellationToken: HttpContext.RequestAborted);
 
-            // Already has ingested artifacts → nothing to backfill.
-            if (status != null &&
-                (status.PdfCount > 0 || status.HasChunksCsv || status.HasBoxScoreCsv))
+            // If the team does not have a prediction model generated yet, we MUST backfill
+            // so it runs the prediction training.
+            if (status != null && status.HasPredictionsCsv)
             {
                 BackfilledTeams.TryAdd(teamId, 1);
                 return;
@@ -481,5 +481,6 @@ internal sealed class MicroserviceProjectStatus
     [JsonPropertyName("has_box_score_csv")] public bool HasBoxScoreCsv { get; set; }
     [JsonPropertyName("has_chunks_csv")] public bool HasChunksCsv { get; set; }
     [JsonPropertyName("has_chroma_index")] public bool HasChromaIndex { get; set; }
+    [JsonPropertyName("has_predictions_csv")] public bool HasPredictionsCsv { get; set; }
     [JsonPropertyName("status")] public string? Status { get; set; }
 }
