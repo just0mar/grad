@@ -50,7 +50,7 @@ public class EmailService : IEmailService
                 <p>Click the link below to open the Equipex app and accept your invitation:</p>
                 <p><a href="https://equipex.io/invite?token={invitationToken}" style="padding: 10px 20px; background-color: #4CAF50; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;">Accept Invitation</a></p>
                 <br>
-                <p><small>If you don't have the app installed, you will be redirected to download it. Alternatively, your token is: <code>{invitationToken}</code></small></p>
+                <p><small>If you do not have the Equipex app installed, please install it first, then click the button above again to accept.</small></p>
                 """
         };
 
