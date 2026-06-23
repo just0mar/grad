@@ -48,7 +48,7 @@ public class EmailService : IEmailService
                 <h2>Equipex Invitation</h2>
                 <p>{inviterName} invited you to join <strong>{clubOrTeamName}</strong> as <strong>{roleName}</strong>.</p>
                 <p>Click the link below to open the Equipex app and accept your invitation:</p>
-                <p><a href="https://equipex.io/invite?token={invitationToken}" style="padding: 10px 20px; background-color: #4CAF50; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;">Accept Invitation</a></p>
+                <p><a href="https://MahmoudAltalbawy.github.io/invite?token={invitationToken}" style="padding: 10px 20px; background-color: #4CAF50; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;">Accept Invitation</a></p>
                 <br>
                 <p><small>If you do not have the Equipex app installed, please install it first, then click the button above again to accept.</small></p>
                 """

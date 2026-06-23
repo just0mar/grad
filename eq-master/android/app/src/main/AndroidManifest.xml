@@ -34,14 +34,14 @@
             </intent-filter>
             
             <!-- Deep Linking Configuration -->
-            <!-- Tells Android that this app owns just0mar.github.io and should open automatically -->
+            <!-- Tells Android that this app owns MahmoudAltalbawy.github.io and should open automatically -->
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <!-- Match both http and https for just0mar.github.io -->
-                <data android:scheme="http" android:host="just0mar.github.io" />
-                <data android:scheme="https" android:host="just0mar.github.io" />
+                <!-- Match both http and https for MahmoudAltalbawy.github.io -->
+                <data android:scheme="http" android:host="MahmoudAltalbawy.github.io" />
+                <data android:scheme="https" android:host="MahmoudAltalbawy.github.io" />
             </intent-filter>
         </activity>
         <!-- Don't delete the meta-data below.
