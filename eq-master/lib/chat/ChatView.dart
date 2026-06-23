@@ -1,4 +1,5 @@
 import 'package:eqq/core/app_localizations.dart';
+import '../core/app_video_player.dart';
 import '../core/cached_image_widget.dart';
 import 'dart:async';
 import 'dart:io';
@@ -6,6 +7,7 @@ import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import '../services/file_cache_service.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
@@ -31,6 +33,8 @@ class ChatView extends StatelessWidget {
   final String conversationId;
   final String personName;
   final String personImage;
+  final String? teamName;
+  final bool isGroup;
   final String currentUserId;
 
   const ChatView({
@@ -38,6 +42,8 @@ class ChatView extends StatelessWidget {
     required this.conversationId,
     required this.personName,
     required this.personImage,
+    this.teamName,
+    this.isGroup = false,
     required this.currentUserId,
   });
 
@@ -50,6 +56,8 @@ class ChatView extends StatelessWidget {
       child: _ChatBody(
         personName: personName,
         personImage: personImage,
+        teamName: teamName,
+        isGroup: isGroup,
         currentUserId: currentUserId,
       ),
     );
@@ -59,11 +67,15 @@ class ChatView extends StatelessWidget {
 class _ChatBody extends StatefulWidget {
   final String personName;
   final String personImage;
+  final String? teamName;
+  final bool isGroup;
   final String currentUserId;
 
   const _ChatBody({
     required this.personName,
     required this.personImage,
+    this.teamName,
+    this.isGroup = false,
     required this.currentUserId,
   });
 
@@ -1067,10 +1079,17 @@ class _ChatBodyState extends State<_ChatBody> with WidgetsBindingObserver {
   Widget _buildProfileAvatar(String? imageUrl, {double radius = 18}) {
     final resolved = ApiClient.resolveUrl(imageUrl);
     if (resolved != null && resolved.isNotEmpty) {
-      return CircleAvatar(
-        radius: radius,
-        backgroundImage: NetworkImage(resolved),
-        backgroundColor: Colors.grey.shade300,
+      return ClipOval(
+        child: CachedImageWidget(
+          imageUrl: resolved,
+          width: radius * 2,
+          height: radius * 2,
+          fit: BoxFit.cover,
+          errorWidget: Container(
+            color: Colors.grey.shade400,
+            child: Icon(Icons.person, color: Colors.white, size: radius),
+          ),
+        ),
       );
     }
     return CircleAvatar(
@@ -1099,14 +1118,30 @@ class _ChatBodyState extends State<_ChatBody> with WidgetsBindingObserver {
             _buildProfileAvatar(widget.personImage, radius: 20),
             const SizedBox(width: 10),
             Expanded(
-              child: Text(
-                widget.personName,
-                style: const TextStyle(
-                  fontFamily: 'SFPro',
-                  fontSize: 17,
-                  fontWeight: FontWeight.w600,
-                ),
-                overflow: TextOverflow.ellipsis,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    widget.personName,
+                    style: const TextStyle(
+                      fontFamily: 'SFPro',
+                      fontSize: 17,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  if (widget.teamName != null && widget.teamName!.isNotEmpty)
+                    Text(
+                      widget.teamName!,
+                      style: TextStyle(
+                        fontFamily: 'SFPro',
+                        fontSize: 12,
+                        color: isDark ? Colors.white54 : Colors.black54,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                ],
               ),
             ),
           ],
@@ -1149,14 +1184,45 @@ class _ChatBodyState extends State<_ChatBody> with WidgetsBindingObserver {
                       horizontal: 12,
                       vertical: 8,
                     ),
-                    itemCount: state.messages.length,
+                    itemCount: state.messages.length + (state.isSending ? 1 : 0),
                     itemBuilder: (context, index) {
-                      final message = state.messages[index];
+                      if (state.isSending && index == 0) {
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 12.0, top: 4.0),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                decoration: BoxDecoration(
+                                  color: isDark ? Colors.grey.shade800 : Colors.grey.shade300,
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    SizedBox(
+                                      width: 14,
+                                      height: 14,
+                                      child: CircularProgressIndicator(strokeWidth: 2, color: isDark ? Colors.white54 : Colors.black54),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text('Uploading...', style: TextStyle(color: isDark ? Colors.white54 : Colors.black54, fontSize: 13, fontFamily: 'SFPro')),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }
+
+                      final msgIndex = state.isSending ? index - 1 : index;
+                      final message = state.messages[msgIndex];
                       final showDate =
-                          index == state.messages.length - 1 ||
+                          msgIndex == state.messages.length - 1 ||
                           !_isSameDay(
                             message.sentAt,
-                            state.messages[index + 1].sentAt,
+                            state.messages[msgIndex + 1].sentAt,
                           );
 
                       return Column(
@@ -1169,6 +1235,7 @@ class _ChatBodyState extends State<_ChatBody> with WidgetsBindingObserver {
                               message: message,
                               isDark: isDark,
                               currentUserId: widget.currentUserId,
+                              isGroup: widget.isGroup,
                               onReply: () =>
                                   setState(() => _replyingTo = message),
                               onLongPress: () => _showMessageActions(message),
@@ -1937,6 +2004,7 @@ class _MessageBubble extends StatelessWidget {
   final ChatMessage message;
   final bool isDark;
   final String currentUserId;
+  final bool isGroup;
   final VoidCallback onReply;
   final VoidCallback onLongPress;
 
@@ -1944,6 +2012,7 @@ class _MessageBubble extends StatelessWidget {
     required this.message,
     required this.isDark,
     required this.currentUserId,
+    this.isGroup = false,
     required this.onReply,
     required this.onLongPress,
   });
@@ -1974,11 +2043,36 @@ class _MessageBubble extends StatelessWidget {
               left: isMe ? 60 : 0,
               right: isMe ? 0 : 60,
             ),
-            child: Column(
-              crossAxisAlignment: isMe
-                  ? CrossAxisAlignment.end
-                  : CrossAxisAlignment.start,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              mainAxisAlignment: isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
               children: [
+                if (isGroup && !isMe) ...[
+                  _buildSmallAvatar(message.senderImageUrl),
+                  const SizedBox(width: 6),
+                ],
+                Flexible(
+                  child: Column(
+                    crossAxisAlignment: isMe
+                        ? CrossAxisAlignment.end
+                        : CrossAxisAlignment.start,
+                    children: [
+                      if (isGroup && !isMe && message.senderName != null)
+                        Padding(
+                          padding: const EdgeInsets.only(left: 4, bottom: 2),
+                          child: Text(
+                            message.senderName!,
+                            style: TextStyle(
+                              fontFamily: 'SFPro',
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: isDark ? Colors.white54 : Colors.black54,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
                 Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 14,
@@ -2032,6 +2126,8 @@ class _MessageBubble extends StatelessWidget {
                         ),
                       ] else if (_pollData() != null) ...[
                         _InteractivePoll(
+                          message: message,
+                          currentUserId: currentUserId,
                           data: _pollData()!,
                           isDark: isDark,
                           isMe: isMe,
@@ -2140,12 +2236,15 @@ class _MessageBubble extends StatelessWidget {
                       ),
                     ),
                   ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
+                ], // closes Column children
+              ), // closes Column
+            ), // closes Flexible
+          ], // closes Row children
+        ), // closes Row
+      ), // closes Container
+    ), // closes GestureDetector
+  ), // closes Align
+); // closes _ReplySwipeWrapper
   }
 
   Map<String, int> _groupReactions() {
@@ -2154,6 +2253,29 @@ class _MessageBubble extends StatelessWidget {
       map[r.emoji] = (map[r.emoji] ?? 0) + 1;
     }
     return map;
+  }
+
+  Widget _buildSmallAvatar(String? imageUrl) {
+    final resolved = ApiClient.resolveUrl(imageUrl);
+    if (resolved != null && resolved.isNotEmpty) {
+      return ClipOval(
+        child: CachedImageWidget(
+          imageUrl: resolved,
+          width: 28,
+          height: 28,
+          fit: BoxFit.cover,
+          errorWidget: Container(
+            color: Colors.grey.shade400,
+            child: const Icon(Icons.person, color: Colors.white, size: 16),
+          ),
+        ),
+      );
+    }
+    return CircleAvatar(
+      radius: 14,
+      backgroundColor: Colors.grey.shade400,
+      child: const Icon(Icons.person, color: Colors.white, size: 16),
+    );
   }
 
   _ReplyData? _replyData() {
@@ -2222,17 +2344,11 @@ class _MessageBubble extends StatelessWidget {
         ),
       );
 
-      final response = await ApiClient.instance.getFile(mediaPath);
+      final fileName = message.mediaFileName ?? 'document';
+      final ext = fileName.contains('.') ? '.${fileName.split('.').last}' : '';
+      final tempFile = await FileCacheService.instance.getFile(mediaPath, extension: ext);
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).hideCurrentSnackBar();
-
-      final tempDir = await getTemporaryDirectory();
-      final fileName = (message.mediaFileName ?? 'document').replaceAll(
-        RegExp(r'[<>:"/\\|?*]'),
-        '_',
-      );
-      final tempFile = File('${tempDir.path}/$fileName');
-      await tempFile.writeAsBytes(response.bodyBytes);
 
       final result = await OpenFilex.open(tempFile.path);
       if (result.type != ResultType.done && context.mounted) {
@@ -2433,11 +2549,15 @@ class _PollData {
 }
 
 class _InteractivePoll extends StatefulWidget {
+  final ChatMessage message;
+  final String currentUserId;
   final _PollData data;
   final bool isDark;
   final bool isMe;
 
   const _InteractivePoll({
+    required this.message,
+    required this.currentUserId,
     required this.data,
     required this.isDark,
     required this.isMe,
@@ -2448,7 +2568,7 @@ class _InteractivePoll extends StatefulWidget {
 }
 
 class _InteractivePollState extends State<_InteractivePoll> {
-  final Set<int> _selectedIndexes = {};
+  static const _numberEmojis = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣', '🔟'];
 
   @override
   Widget build(BuildContext context) {
@@ -2482,34 +2602,20 @@ class _InteractivePollState extends State<_InteractivePoll> {
           const SizedBox(height: 10),
           ...widget.data.options.asMap().entries.map((entry) {
             final index = entry.key;
-            final isSelected = _selectedIndexes.contains(index);
-            final progress = _selectedIndexes.isEmpty
-                ? 0.0
-                : isSelected
-                ? 1.0
-                : 0.0;
+            final emoji = index < _numberEmojis.length ? _numberEmojis[index] : '❓';
+            final voteCount = widget.message.reactions.where((r) => r.emoji == emoji).length;
+            final isSelected = widget.message.reactions.any((r) => r.emoji == emoji && r.userId == widget.currentUserId);
+            final totalVotes = widget.message.reactions.where((r) => _numberEmojis.contains(r.emoji)).length;
+            final progress = totalVotes == 0 ? 0.0 : voteCount / totalVotes;
+
             return Padding(
               padding: const EdgeInsets.only(bottom: 8),
               child: InkWell(
                 borderRadius: BorderRadius.circular(12),
                 onTap: () {
-                  setState(() {
-                    if (widget.data.allowMultipleAnswers) {
-                      if (isSelected) {
-                        _selectedIndexes.remove(index);
-                      } else {
-                        _selectedIndexes.add(index);
-                      }
-                    } else {
-                      if (isSelected) {
-                        _selectedIndexes.clear();
-                      } else {
-                        _selectedIndexes
-                          ..clear()
-                          ..add(index);
-                      }
-                    }
-                  });
+                  context.read<ChatBloc>().add(
+                    ToggleReaction(messageId: widget.message.messageId, emoji: emoji),
+                  );
                 },
                 child: LayoutBuilder(
                   builder: (context, constraints) {
@@ -2576,11 +2682,9 @@ class _InteractivePollState extends State<_InteractivePoll> {
                               ),
                               const SizedBox(width: 8),
                               Text(
-                                _selectedIndexes.isEmpty
+                                voteCount == 0
                                     ? ''
-                                    : isSelected
-                                    ? '1'
-                                    : '0',
+                                    : '$voteCount',
                                 style: TextStyle(
                                   fontFamily: 'SFPro',
                                   fontSize: 12,
@@ -2598,11 +2702,11 @@ class _InteractivePollState extends State<_InteractivePoll> {
             );
           }),
           Text(
-            _selectedIndexes.isEmpty
+            widget.message.reactions.isEmpty
                 ? (widget.data.allowMultipleAnswers
                       ? 'Tap one or more answers'
                       : 'Tap to vote')
-                : '${_selectedIndexes.length} vote${_selectedIndexes.length == 1 ? '' : 's'}',
+                : '${widget.message.reactions.where((r) => _numberEmojis.contains(r.emoji)).length} vote${widget.message.reactions.where((r) => _numberEmojis.contains(r.emoji)).length == 1 ? '' : 's'}',
             style: TextStyle(fontFamily: 'SFPro', fontSize: 11, color: subText),
           ),
         ],
@@ -2712,189 +2816,14 @@ class _VideoPreview extends StatelessWidget {
   }
 }
 
-class _MediaViewer extends StatefulWidget {
+class _MediaViewer extends StatelessWidget {
   final String url;
   final bool isVideo;
 
-  const _MediaViewer({required this.url, required this.isVideo});
-
-  @override
-  State<_MediaViewer> createState() => _MediaViewerState();
-}
-
-class _MediaViewerState extends State<_MediaViewer> {
-  VideoPlayerController? _videoController;
-  bool _videoReady = false;
-  bool _videoSeeking = false;
-  String? _videoError;
-  DateTime _lastVideoUiRefresh = DateTime.fromMillisecondsSinceEpoch(0);
-
-  @override
-  void initState() {
-    super.initState();
-    if (widget.isVideo) {
-      _initVideo();
-    }
-  }
-
-  Future<void> _initVideo() async {
-    VideoPlayerController? controller;
-    try {
-      controller = await _createVideoController();
-      _videoController = controller;
-      controller.addListener(_onVideoUpdate);
-      await controller.setLooping(false);
-      await controller.initialize();
-      if (!mounted) {
-        await controller.dispose();
-        return;
-      }
-      setState(() => _videoReady = true);
-      await controller.play();
-    } catch (e) {
-      debugPrint('Chat video failed for ${widget.url}: $e');
-      await controller?.dispose();
-      if (mounted) {
-        setState(() => _videoError = 'This video could not be played.');
-      }
-    }
-  }
-
-  Future<VideoPlayerController> _createVideoController() async {
-    final uri = Uri.parse(widget.url);
-    if (kIsWeb) return VideoPlayerController.networkUrl(uri);
-
-    try {
-      final file = await _cachedVideoFile(uri);
-      return VideoPlayerController.file(file);
-    } catch (e) {
-      debugPrint('Chat video cache fallback for ${widget.url}: $e');
-      return VideoPlayerController.networkUrl(uri);
-    }
-  }
-
-  Future<File> _cachedVideoFile(Uri uri) async {
-    final tempDir = await getTemporaryDirectory();
-    final cacheDir = Directory(
-      '${tempDir.path}${Platform.pathSeparator}chat_video_cache',
-    );
-    await cacheDir.create(recursive: true);
-
-    final rawName = uri.pathSegments.isNotEmpty
-        ? uri.pathSegments.last
-        : 'video.mp4';
-    final safeName = rawName.replaceAll(RegExp(r'[<>:"/\\|?*]'), '_');
-    final file = File('${cacheDir.path}${Platform.pathSeparator}$safeName');
-    if (await file.exists() && await file.length() > 0) {
-      return file;
-    }
-
-    final response = await http.get(uri);
-    if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw Exception('Video download failed with ${response.statusCode}.');
-    }
-
-    await file.writeAsBytes(response.bodyBytes, flush: true);
-    return file;
-  }
-
-  void _onVideoUpdate() {
-    if (!mounted) return;
-    final controller = _videoController;
-    if (controller == null) return;
-
-    if (controller.value.hasError && _videoError == null) {
-      setState(() {
-        _videoError = controller.value.errorDescription?.isNotEmpty == true
-            ? controller.value.errorDescription
-            : 'This video could not be played.';
-      });
-      return;
-    }
-
-    final now = DateTime.now();
-    if (now.difference(_lastVideoUiRefresh) <
-        const Duration(milliseconds: 300)) {
-      return;
-    }
-    _lastVideoUiRefresh = now;
-    setState(() {});
-  }
-
-  @override
-  void dispose() {
-    _videoController?.removeListener(_onVideoUpdate);
-    _videoController?.dispose();
-    super.dispose();
-  }
-
-  void _toggleVideo() {
-    final controller = _videoController;
-    if (controller == null) return;
-    setState(() {
-      controller.value.isPlaying ? controller.pause() : controller.play();
-    });
-  }
-
-  Future<void> _seekVideoBy(Duration delta) async {
-    final controller = _videoController;
-    if (controller == null || _videoSeeking) return;
-
-    final value = controller.value;
-    final duration = value.duration;
-    final wasPlaying = value.isPlaying;
-    var target = value.position + delta;
-    if (target < Duration.zero) target = Duration.zero;
-    if (duration > Duration.zero && target > duration) target = duration;
-
-    setState(() => _videoSeeking = true);
-    try {
-      if (wasPlaying) await controller.pause();
-      await controller.seekTo(target);
-      if (wasPlaying && mounted) await controller.play();
-    } finally {
-      if (mounted) setState(() => _videoSeeking = false);
-    }
-  }
-
-  String _formatVideoTime(Duration value) {
-    String two(int n) => n.toString().padLeft(2, '0');
-    final hours = value.inHours;
-    final minutes = value.inMinutes.remainder(60);
-    final seconds = value.inSeconds.remainder(60);
-    return hours > 0
-        ? '${two(hours)}:${two(minutes)}:${two(seconds)}'
-        : '${two(minutes)}:${two(seconds)}';
-  }
-
-  Widget _videoControl({
-    required IconData icon,
-    required String tooltip,
-    required VoidCallback onPressed,
-    double size = 54,
-    double iconSize = 30,
-  }) {
-    return Tooltip(
-      message: tooltip,
-      child: SizedBox(
-        width: size,
-        height: size,
-        child: IconButton(
-          style: IconButton.styleFrom(
-            backgroundColor: Colors.black.withValues(alpha: 0.42),
-            foregroundColor: Colors.white,
-          ),
-          iconSize: iconSize,
-          icon: Icon(icon),
-          onPressed: onPressed,
-        ),
-      ),
-    );
-  }
+  const _MediaViewer({super.key, required this.url, required this.isVideo});
 
   @override
   Widget build(BuildContext context) {
-    final controller = _videoController;
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
@@ -2903,111 +2832,17 @@ class _MediaViewerState extends State<_MediaViewer> {
         elevation: 0,
       ),
       body: Center(
-        child: widget.isVideo
-            ? _buildVideoBody(controller)
+        child: isVideo
+            ? AppVideoPlayer(
+                url: url,
+                autoPlay: true,
+                showControls: true,
+              )
             : InteractiveViewer(
                 minScale: 1,
                 maxScale: 4,
-                child: CachedImageWidget(imageUrl: widget.url, fit: BoxFit.contain),
+                child: CachedImageWidget(imageUrl: url, fit: BoxFit.contain),
               ),
-      ),
-    );
-  }
-
-  Widget _buildVideoBody(VideoPlayerController? controller) {
-    if (_videoError != null) {
-      return Padding(
-        padding: const EdgeInsets.all(24),
-        child: Text(
-          _videoError!,
-          textAlign: TextAlign.center,
-          style: const TextStyle(color: Colors.white70),
-        ),
-      );
-    }
-
-    if (controller == null || !_videoReady) {
-      return const CircularProgressIndicator();
-    }
-
-    return AspectRatio(
-      aspectRatio: controller.value.aspectRatio,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          VideoPlayer(controller),
-          if (controller.value.isBuffering || _videoSeeking)
-            const Positioned(
-              top: 24,
-              child: SizedBox(
-                width: 26,
-                height: 26,
-                child: CircularProgressIndicator(
-                  color: Colors.white,
-                  strokeWidth: 2.5,
-                ),
-              ),
-            ),
-          Positioned(
-            left: 16,
-            right: 16,
-            bottom: 48,
-            child: VideoProgressIndicator(
-              controller,
-              allowScrubbing: true,
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              colors: VideoProgressColors(
-                playedColor: Colors.green.shade700,
-                bufferedColor: Colors.white38,
-                backgroundColor: Colors.white24,
-              ),
-            ),
-          ),
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _videoControl(
-                icon: Icons.replay_10,
-                tooltip: 'Back 10 seconds',
-                onPressed: () => _seekVideoBy(const Duration(seconds: -10)),
-              ),
-              const SizedBox(width: 16),
-              _videoControl(
-                icon: controller.value.isPlaying
-                    ? Icons.pause
-                    : Icons.play_arrow,
-                tooltip: controller.value.isPlaying ? 'Pause' : 'Play',
-                size: 68,
-                iconSize: 42,
-                onPressed: _toggleVideo,
-              ),
-              const SizedBox(width: 16),
-              _videoControl(
-                icon: Icons.forward_10,
-                tooltip: 'Forward 10 seconds',
-                onPressed: () => _seekVideoBy(const Duration(seconds: 10)),
-              ),
-            ],
-          ),
-          Positioned(
-            left: 16,
-            right: 16,
-            bottom: 24,
-            child: Row(
-              children: [
-                Text(
-                  _formatVideoTime(controller.value.position),
-                  style: const TextStyle(color: Colors.white, fontSize: 12),
-                ),
-                const Spacer(),
-                Text(
-                  _formatVideoTime(controller.value.duration),
-                  style: const TextStyle(color: Colors.white, fontSize: 12),
-                ),
-              ],
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -3368,3 +3203,5 @@ class _MediaCaptionPageState extends State<_MediaCaptionPage> {
     );
   }
 }
+
+

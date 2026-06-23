@@ -77,6 +77,7 @@ class MessagesBloc extends Bloc<MessagesEvent, MessagesState> {
       final members = conversations.map((conversation) {
         String title;
         String? profileImageUrl;
+        String? teamName;
         final isGroup =
             conversation.isGroup || conversation.participants.length > 2;
 
@@ -95,6 +96,7 @@ class MessagesBloc extends Bloc<MessagesEvent, MessagesState> {
           );
           title = other.name;
           profileImageUrl = other.profileImageUrl;
+          teamName = other.teamName;
         } else {
           title = conversation.participants.map((p) => p.name).join(', ');
         }
@@ -107,6 +109,7 @@ class MessagesBloc extends Bloc<MessagesEvent, MessagesState> {
               : 'No messages yet',
           image: 'assets/profile.png',
           profileImageUrl: profileImageUrl,
+          teamName: teamName,
           unreadCount: conversation.unreadCount,
           lastMessageType: conversation.lastMessageType,
           isGroup: isGroup,

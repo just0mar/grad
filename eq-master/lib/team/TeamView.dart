@@ -101,6 +101,11 @@ class _TeamViewContentState extends State<_TeamViewContent>
           title: AppLocalizations.of(context).teamTitle,
           plans: const [],
           showTeamSwitcher: true,
+          actions: [
+            BlocBuilder<TeamBloc, TeamState>(
+              builder: (context, state) => _buildTeamMenu(context, state, textColor),
+            ),
+          ],
         ),
         body: AppBackground(
           child: SafeArea(
@@ -117,7 +122,7 @@ class _TeamViewContentState extends State<_TeamViewContent>
                   ),
                   child: TabBar(
                     controller: _tabController,
-                    labelColor: AppColors.primary,
+                    labelColor: Colors.white,
                     unselectedLabelColor: isDark
                         ? Colors.white60
                         : Colors.black,
@@ -126,7 +131,10 @@ class _TeamViewContentState extends State<_TeamViewContent>
                       fontWeight: FontWeight.bold,
                     ),
                     unselectedLabelStyle: const TextStyle(fontFamily: 'SFPro'),
-                    indicator: const BoxDecoration(),
+                    indicator: BoxDecoration(
+                      color: AppColors.primary,
+                      borderRadius: BorderRadius.circular(32),
+                    ),
                     tabs: [
                       Tab(icon: const Icon(Icons.group), text: AppLocalizations.of(context).teamMembers),
                       Tab(icon: const Icon(Icons.bar_chart), text: AppLocalizations.of(context).teamStats),

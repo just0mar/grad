@@ -113,7 +113,7 @@ public class ChatbotController : ControllerBase
             return new ContentResult
             {
                 Content = payload,
-                ContentType = "application/json",
+                ContentType = "application/json; charset=utf-8",
                 StatusCode = (int)response.StatusCode,
             };
         }
@@ -287,7 +287,7 @@ public class ChatbotController : ControllerBase
         return new ContentResult
         {
             Content = payload,
-            ContentType = "application/json",
+            ContentType = "application/json; charset=utf-8",
             StatusCode = (int)response.StatusCode,
         };
     }

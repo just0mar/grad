@@ -1,5 +1,6 @@
 import 'package:eqq/core/app_localizations.dart';
 import 'package:flutter/material.dart';
+import '../services/file_cache_service.dart';
 // import 'GameHistoryModel.dart';
 //
 // class GameDetailView extends StatelessWidget {
@@ -309,6 +310,7 @@ import 'package:flutter/material.dart';
 
 
 // import 'package:flutter/material.dart';
+import '../services/file_cache_service.dart';
 // import 'GameHistoryModel.dart';
 //
 // class GameDetailHistoryView extends StatefulWidget {
@@ -663,6 +665,7 @@ import 'package:flutter/material.dart';
 
 
 // import 'package:flutter/material.dart';
+import '../services/file_cache_service.dart';
 // import '../core/app_localizations.dart';
 import '../appbar/CustomAppBar.dart';
 // import 'GameHistoryModel.dart';
@@ -990,6 +993,7 @@ import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import '../services/file_cache_service.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -1030,7 +1034,7 @@ class _GameDetailViewState extends State<GameDetailHistoryView> with TickerProvi
   final EventDocumentService _docService = EventDocumentService();
   List<EventDocumentDto> _documents = [];
   bool _docsLoading = false;
-  bool _openingDocument = false;
+  String? _openingDocumentId;
   bool _uploadingDoc = false;
 
   final StatsService _statsService = StatsService();
@@ -1087,14 +1091,9 @@ class _GameDetailViewState extends State<GameDetailHistoryView> with TickerProvi
     if (game.eventId == null || game.clubId == null || game.teamId == null) return;
     setState(() => _openingRawPdf = true);
     try {
-      final result = await _statsService.downloadRawStatsPdf(
-          game.clubId!, game.teamId!, game.eventId!);
-      final tempDir = await getTemporaryDirectory();
-      final safeName = result.fileName.replaceAll(RegExp(r'[<>:"/\\|?*]'), '_');
-      final file = File('${tempDir.path}/$safeName');
-      await file.writeAsBytes(result.bytes);
-
-      final openResult = await OpenFilex.open(file.path, type: result.contentType);
+      final tempFile = await FileCacheService.instance.getFile('/clubs/${game.clubId}/teams/${game.teamId}/stats/matches/${game.eventId}/raw-pdf', extension: '.pdf', contentType: 'application/pdf');
+      if (!mounted) return;
+      final openResult = await OpenFilex.open(tempFile.path, type: 'application/pdf');
       if (openResult.type != ResultType.done && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(AppLocalizations.of(context).openFileErrorMsg.replaceAll('%s', openResult.message))),
@@ -1318,16 +1317,13 @@ class _GameDetailViewState extends State<GameDetailHistoryView> with TickerProvi
   }
 
   Future<void> _openDocument(EventDocumentDto doc) async {
-    if (_openingDocument) return;
-    setState(() => _openingDocument = true);
+    if (_openingDocumentId != null) return;
+    setState(() => _openingDocumentId = doc.documentId);
     try {
-      final result = await _docService.downloadDocument(doc.documentId);
-      final tempDir = await getTemporaryDirectory();
-      final safeName = result.fileName.replaceAll(RegExp(r'[<>:"/\\|?*]'), '_');
-      final file = File('${tempDir.path}/$safeName');
-      await file.writeAsBytes(result.bytes);
-
-      final openResult = await OpenFilex.open(file.path, type: result.contentType);
+      final ext = doc.originalFileName.contains('.') ? '.${doc.originalFileName.split('.').last}' : '';
+      final tempFile = await FileCacheService.instance.getFile('/events/documents/${doc.documentId}/download', extension: ext, contentType: doc.contentType);
+      if (!mounted) return;
+      final openResult = await OpenFilex.open(tempFile.path, type: doc.contentType);
       if (openResult.type != ResultType.done && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(AppLocalizations.of(context).openFileError(openResult.message))),
@@ -1340,7 +1336,7 @@ class _GameDetailViewState extends State<GameDetailHistoryView> with TickerProvi
         );
       }
     } finally {
-      if (mounted) setState(() => _openingDocument = false);
+      if (mounted) setState(() => _openingDocumentId = null);
     }
   }
 
@@ -1755,8 +1751,8 @@ class _GameDetailViewState extends State<GameDetailHistoryView> with TickerProvi
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(20)),
                       ),
-                      onPressed: _openingDocument ? null : () => _openDocument(doc),
-                      child: _openingDocument
+                      onPressed: _openingDocumentId != null ? null : () => _openDocument(doc),
+                      child: _openingDocumentId == doc.documentId
                           ? const SizedBox(
                               width: 16, height: 16,
                               child: CircularProgressIndicator(
@@ -2020,19 +2016,11 @@ class _GameDetailViewState extends State<GameDetailHistoryView> with TickerProvi
     final game = widget.game;
     if (game.eventId == null || game.clubId == null || game.teamId == null) return;
     setState(() => _savingVideo = true);
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(AppLocalizations.of(context).uploadingVideo),
-          duration: const Duration(minutes: 5),
-        ),
-      );
-    }
+
     try {
       final created = await _videoService.uploadVideo(
           game.clubId!, game.teamId!, game.eventId!, title, file);
       if (mounted) {
-        ScaffoldMessenger.of(context).hideCurrentSnackBar();
         setState(() => _videos.insert(0, created));
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(AppLocalizations.of(context).videoUploaded)),
@@ -2130,51 +2118,73 @@ class _GameDetailViewState extends State<GameDetailHistoryView> with TickerProvi
           )
         else
           ..._videos.map((video) {
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(video.title,
-                          style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w500,
-                              color: textColor),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis),
-                    ),
-                    if (video.canEdit)
-                      IconButton(
-                        icon: Icon(Icons.delete_outline,
-                            color: textColor.withValues(alpha: 0.5), size: 20),
-                        onPressed: () => _confirmDeleteVideo(video),
+            return Card(
+              color: cardBg,
+              margin: const EdgeInsets.only(bottom: 16),
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+                side: BorderSide(color: textColor.withValues(alpha: 0.1), width: 1),
+              ),
+              child: InkWell(
+                onTap: () => _openVideo(video),
+                borderRadius: BorderRadius.circular(12),
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 56,
+                        height: 56,
+                        decoration: BoxDecoration(
+                          color: Colors.green.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Center(
+                          child: Icon(Icons.play_circle_fill_rounded,
+                              color: Colors.green, size: 36),
+                        ),
                       ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                GestureDetector(
-                  onTap: () => _openVideo(video),
-                  child: Container(
-                    height: 180,
-                    decoration: BoxDecoration(
-                      color: Colors.black87,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Center(
-                      child: Container(
-                        width: 52,
-                        height: 52,
-                        decoration: const BoxDecoration(
-                            color: Colors.white, shape: BoxShape.circle),
-                        child: const Icon(Icons.play_arrow,
-                            color: Colors.black, size: 32),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              video.title.isNotEmpty ? video.title : 'Game Video',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: textColor,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            if (video.addedByName.isNotEmpty) ...[
+                              const SizedBox(height: 4),
+                              Text(
+                                'Added by ${video.addedByName}',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: textColor.withValues(alpha: 0.6),
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ]
+                          ],
+                        ),
                       ),
-                    ),
+                      if (video.canEdit)
+                        IconButton(
+                          icon: Icon(Icons.delete_outline,
+                              color: textColor.withValues(alpha: 0.5), size: 22),
+                          onPressed: () => _confirmDeleteVideo(video),
+                        ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 16),
-              ],
+              ),
             );
           }),
       ],
@@ -2451,3 +2461,4 @@ class _NoteActionButton extends StatelessWidget {
     );
   }
 }
+

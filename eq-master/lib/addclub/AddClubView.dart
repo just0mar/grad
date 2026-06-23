@@ -116,6 +116,7 @@ class _AddClubContentState extends State<_AddClubContent>
                   return SingleChildScrollView(
                     physics: const BouncingScrollPhysics(),
                     padding: pagePadding.copyWith(
+                      top: pagePadding.top + MediaQuery.paddingOf(context).top + kToolbarHeight,
                       bottom: pagePadding.bottom + smoothKeyboardHeight,
                     ),
                     child: Center(
@@ -205,6 +206,8 @@ class _AddClubContentState extends State<_AddClubContent>
                               },
                               child: AbsorbPointer(
                                 child: TextFormField(
+                                  key: ValueKey(state.establishedDate),
+                                  initialValue: state.establishedDate.isNotEmpty ? state.establishedDate : null,
                                   style: TextStyle(
                                     color: textColor,
                                     fontFamily: 'SFPro',
@@ -214,13 +217,9 @@ class _AddClubContentState extends State<_AddClubContent>
                                     fillColor: fieldColor,
                                     labelText: t.addClubEstDate,
                                     labelStyle: TextStyle(color: helperColor),
-                                    hintText: state.establishedDate.isNotEmpty
-                                        ? state.establishedDate
-                                        : t.addClubSelectDate,
+                                    hintText: t.addClubSelectDate,
                                     hintStyle: TextStyle(
-                                      color: state.establishedDate.isNotEmpty
-                                          ? textColor
-                                          : helperColor,
+                                      color: helperColor,
                                       fontFamily: 'SFPro',
                                     ),
                                     suffixIcon: Icon(

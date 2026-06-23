@@ -4,6 +4,7 @@ class TeamMember {
   final String role;
   final String image;
   final String? profileImageUrl;
+  final String? teamName;
   final int unreadCount;
   final String lastMessageType; // text, image, video, audio, document
   final bool isGroup;
@@ -14,6 +15,7 @@ class TeamMember {
     required this.role,
     required this.image,
     this.profileImageUrl,
+    this.teamName,
     this.unreadCount = 0,
     this.lastMessageType = 'text',
     this.isGroup = false,

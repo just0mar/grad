@@ -177,7 +177,7 @@ public class MessagingService : IMessagingService
     private async Task<ConversationDto> BuildConversationDtoAsync(Guid conversationId, Guid callerUserId)
     {
         var conv = await _db.Conversations
-            .Include(c => c.Participants).ThenInclude(p => p.User)
+            .Include(c => c.Participants).ThenInclude(p => p.User).ThenInclude(u => u.TeamMemberships).ThenInclude(tm => tm.Team)
             .FirstOrDefaultAsync(c => c.ConversationId == conversationId)
             ?? throw new InvalidOperationException("Conversation not found.");
 
@@ -199,7 +199,7 @@ public class MessagingService : IMessagingService
             ConversationId = conv.ConversationId,
             IsGroup = conv.IsGroup,
             Name = conv.Name,
-            Participants = conv.Participants.Select(p => new ParticipantDto { UserId = p.UserId, Name = p.User.Name, ProfileImageUrl = p.User.ProfileImageUrl }).ToList(),
+            Participants = conv.Participants.Select(p => new ParticipantDto { UserId = p.UserId, Name = p.User.Name, ProfileImageUrl = p.User.ProfileImageUrl, TeamName = p.User.TeamMemberships.FirstOrDefault()?.Team?.TeamName }).ToList(),
             LastMessage = lastMsg == null ? null : MapToMessageDto(lastMsg, participantIds),
             UnreadCount = unread,
             CreatedAt = conv.CreatedAt
@@ -363,6 +363,7 @@ public class MessagingService : IMessagingService
             ConversationId = m.ConversationId,
             SenderUserId = m.SenderUserId,
             SenderName = m.Sender.Name,
+            SenderProfileImageUrl = m.Sender.ProfileImageUrl,
             Content = m.Content,
             SentAt = m.SentAt,
             IsRead = seenByAll || m.IsRead,

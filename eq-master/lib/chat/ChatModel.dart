@@ -4,6 +4,8 @@ class ChatMessage {
   final String messageId;
   final String text;
   final bool fromMe;
+  final String? senderName;
+  final String? senderImageUrl;
   final DateTime sentAt;
   final DateTime? editedAt;
   final bool isDeleted;
@@ -21,10 +23,12 @@ class ChatMessage {
   final bool seenByAll;
 
   ChatMessage({
-    this.messageId = '',
+    required this.messageId,
     required this.text,
     required this.fromMe,
-    DateTime? sentAt,
+    this.senderName,
+    this.senderImageUrl,
+    required this.sentAt,
     this.editedAt,
     this.isDeleted = false,
     this.isRead = false,
@@ -39,19 +43,24 @@ class ChatMessage {
     this.seenByCount = 0,
     this.requiredSeenCount = 0,
     this.seenByAll = false,
-  }) : sentAt = sentAt ?? DateTime.now();
-
-  bool get canEditOrDelete {
-    final now = DateTime.now();
-    final diff = now.difference(sentAt);
-    return fromMe && diff.inMinutes < 60;
-  }
+  });
 
   ChatMessage copyWith({
+    String? messageId,
     String? text,
+    bool? fromMe,
+    String? senderName,
+    String? senderImageUrl,
+    DateTime? sentAt,
     DateTime? editedAt,
     bool? isDeleted,
     bool? isRead,
+    String? messageType,
+    String? mediaUrl,
+    String? mediaFileName,
+    double? locationLatitude,
+    double? locationLongitude,
+    String? locationLabel,
     List<MessageReactionDto>? reactions,
     List<MessageSeenByDto>? seenBy,
     int? seenByCount,
@@ -59,24 +68,31 @@ class ChatMessage {
     bool? seenByAll,
   }) {
     return ChatMessage(
-      messageId: messageId,
+      messageId: messageId ?? this.messageId,
       text: text ?? this.text,
-      fromMe: fromMe,
-      sentAt: sentAt,
+      fromMe: fromMe ?? this.fromMe,
+      senderName: senderName ?? this.senderName,
+      senderImageUrl: senderImageUrl ?? this.senderImageUrl,
+      sentAt: sentAt ?? this.sentAt,
       editedAt: editedAt ?? this.editedAt,
       isDeleted: isDeleted ?? this.isDeleted,
       isRead: isRead ?? this.isRead,
-      messageType: messageType,
-      mediaUrl: mediaUrl,
-      mediaFileName: mediaFileName,
-      locationLatitude: locationLatitude,
-      locationLongitude: locationLongitude,
-      locationLabel: locationLabel,
+      messageType: messageType ?? this.messageType,
+      mediaUrl: mediaUrl ?? this.mediaUrl,
+      mediaFileName: mediaFileName ?? this.mediaFileName,
+      locationLatitude: locationLatitude ?? this.locationLatitude,
+      locationLongitude: locationLongitude ?? this.locationLongitude,
+      locationLabel: locationLabel ?? this.locationLabel,
       reactions: reactions ?? this.reactions,
       seenBy: seenBy ?? this.seenBy,
       seenByCount: seenByCount ?? this.seenByCount,
       requiredSeenCount: requiredSeenCount ?? this.requiredSeenCount,
       seenByAll: seenByAll ?? this.seenByAll,
     );
+  }
+  bool get canEditOrDelete {
+    final now = DateTime.now();
+    final diff = now.difference(sentAt);
+    return fromMe && diff.inMinutes < 60;
   }
 }

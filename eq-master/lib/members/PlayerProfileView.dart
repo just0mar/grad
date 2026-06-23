@@ -1278,6 +1278,9 @@ class _PlayerProfileViewState extends State<PlayerProfileView> with TickerProvid
           appBar: CustomAppBar(
             title: currentMember.name,
             showTeamSwitcher: false,
+            actions: [
+              _buildPlayerMenu(context, state, currentMember, canManageFitness || canManageMedical || state.userRoleInSelectedTeam.trim() == 'ClubManager' || state.userRoleInSelectedTeam.trim() == 'TeamManager'),
+            ],
           ),
           body: buildKeyboardDismissible(
             child: AppBackground(
@@ -3324,12 +3327,6 @@ class _PlayerProfileViewState extends State<PlayerProfileView> with TickerProvid
         : file.name.replaceAll(RegExp(r'\.[^.]+$'), '');
 
     setState(() => _uploadingVideo = true);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(AppLocalizations.of(context).uploadingVideoMsg),
-        duration: const Duration(minutes: 5),
-      ),
-    );
     try {
       final dto = await _playerVideoService.uploadVideo(
           ctx.clubId,
@@ -3339,7 +3336,6 @@ class _PlayerProfileViewState extends State<PlayerProfileView> with TickerProvid
           file,
         );
       if (!mounted) return;
-      ScaffoldMessenger.of(context).hideCurrentSnackBar();
       setState(() {
         _playerVideos = [dto, ..._playerVideos];
         _uploadingVideo = false;
@@ -3349,7 +3345,6 @@ class _PlayerProfileViewState extends State<PlayerProfileView> with TickerProvid
       );
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).hideCurrentSnackBar();
       setState(() => _uploadingVideo = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(AppLocalizations.of(context).videoUploadFailed)),
@@ -3530,6 +3525,147 @@ class _PlayerProfileViewState extends State<PlayerProfileView> with TickerProvid
       padding: const EdgeInsets.all(24),
       child: Center(
         child: Text(message, style: TextStyle(color: textColor)),
+      ),
+    );
+  }
+
+  Widget _buildPlayerMenu(BuildContext context, TeamState state, Member currentMember, bool isManager) {
+    if (!isManager) return const SizedBox.shrink();
+
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? Colors.white : Colors.black;
+
+    final currentUserId =
+        context.read<SessionBloc>().state.user?.userId ?? state.currentUserId;
+    final isOwnProfile = currentMember.userId == currentUserId;
+
+    return PopupMenuButton<String>(
+      icon: Icon(Icons.more_vert, color: textColor),
+      onSelected: (value) {
+        if (value == 'edit') {
+          _showEditPlayerDialog(context, state, currentMember);
+        } else if (value == 'kick') {
+          _showKickPlayerDialog(context, state, currentMember);
+        }
+      },
+      itemBuilder: (_) => [
+        PopupMenuItem(value: 'edit', child: Text(AppLocalizations.of(context).edit ?? 'Edit Info')),
+        if (!isOwnProfile)
+          PopupMenuItem(value: 'kick', child: Text(AppLocalizations.of(context).remove ?? 'Remove from Team')),
+      ],
+    );
+  }
+
+  void _showEditPlayerDialog(BuildContext context, TeamState state, Member member) {
+    final positionController = TextEditingController(text: member.position);
+    final jerseyController = TextEditingController(text: member.jerseyNumber?.toString() ?? '');
+    
+    final selectedTeams = state.availableTeams.where((t) => t.id == state.selectedTeamId);
+    final clubId = selectedTeams.isEmpty ? null : selectedTeams.first.clubId;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Edit Player Info', style: TextStyle(fontFamily: 'SFPro')),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: positionController,
+              decoration: const InputDecoration(labelText: 'Position'),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: jerseyController,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(labelText: 'Jersey Number'),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(AppLocalizations.of(context).cancel),
+          ),
+          TextButton(
+            onPressed: () async {
+              if (clubId == null) return;
+              Navigator.pop(ctx);
+              
+              try {
+                await _playerService.upsertPlayerProfile(
+                  clubId,
+                  state.selectedTeamId,
+                  member.userId,
+                  {
+                    'position': positionController.text,
+                    'jerseyNumber': int.tryParse(jerseyController.text),
+                  },
+                );
+
+                if (!context.mounted) return;
+                // Reload the profile
+                setState(() {
+                  _bundleKey = '';
+                });
+                context.read<TeamBloc>().add(
+                  LoadTeamMembers(activeTeamId: state.selectedTeamId),
+                );
+              } catch (e) {
+                if (!context.mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Failed to update player info: $e')),
+                );
+              }
+            },
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showKickPlayerDialog(BuildContext context, TeamState state, Member member) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final dialogBg = isDark ? const Color(0xFF1B3A2D) : Colors.white;
+    final textColor = isDark ? Colors.white : Colors.black;
+
+    final selectedTeams = state.availableTeams.where((t) => t.id == state.selectedTeamId);
+    final clubId = selectedTeams.isEmpty ? null : selectedTeams.first.clubId;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: dialogBg,
+        title: Text(
+          'Remove Player',
+          style: TextStyle(color: textColor, fontFamily: 'SFPro'),
+        ),
+        content: Text(
+          'Are you sure you want to remove ${member.name} from the team?',
+          style: TextStyle(color: textColor, fontFamily: 'SFPro'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(AppLocalizations.of(context).cancel),
+          ),
+          TextButton(
+            onPressed: () {
+              if (clubId == null) return;
+              Navigator.pop(ctx);
+              context.read<TeamBloc>().add(
+                RemoveMember(
+                  clubId: clubId,
+                  teamId: state.selectedTeamId,
+                  memberId: member.userId,
+                ),
+              );
+              Navigator.pop(context); // Go back from profile after kicking
+            },
+            child: const Text('Remove', style: TextStyle(color: Colors.red)),
+          ),
+        ],
       ),
     );
   }

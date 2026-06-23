@@ -30,6 +30,7 @@ import '../core/app_transitions.dart';
 import '../core/app_localizations.dart';
 import '../core/design_tokens.dart';
 import '../core/target_navigator.dart';
+import '../equipos_lens/EquiposLensView.dart';
 
 class MainNavigation extends StatefulWidget {
   final String userRole;
@@ -623,12 +624,21 @@ class _MainNavigationState extends State<MainNavigation>
         ];
     }
 
-    if (!actions.any((a) => a['route'] is AskEquipoView)) {
+      if (!actions.any((a) => a['route'] is AskEquipoView)) {
         actions.add({
           'icon': Icons.smart_toy_outlined,
           'label': t.fabAskEquipo,
           'type': 'navigate',
           'route': const AskEquipoView(),
+        });
+      }
+
+      if (!actions.any((a) => a['route'] is EquiposLensView)) {
+        actions.add({
+          'icon': Icons.lens_blur,
+          'label': 'Equipo Lens',
+          'type': 'navigate',
+          'route': const EquiposLensView(),
         });
       }
 

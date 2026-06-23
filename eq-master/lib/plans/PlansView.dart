@@ -7,6 +7,7 @@ import 'dart:math';
 import 'package:eqq/addplans/AddPlansView.dart';
 import '../core/app_background.dart';
 import 'package:flutter/material.dart';
+import '../services/file_cache_service.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:open_filex/open_filex.dart';
@@ -1304,22 +1305,18 @@ class _DocumentCardState extends State<_DocumentCard> {
   Future<void> _onTap() async {
     setState(() => _busy = true);
     try {
-      final result = await _planService.downloadPlanDocument(
-        widget.planId,
-        widget.doc.documentId,
+      final ext = widget.doc.fileName.contains('.') ? '.${widget.doc.fileName.split('.').last}' : '';
+      final tempFile = await FileCacheService.instance.getFile(
+        '/plans/${widget.planId}/documents/${widget.doc.documentId}/download',
+        extension: ext,
+        contentType: widget.doc.contentType,
       );
 
       if (!mounted) return;
 
-      // Save to temp and open with external app
-      final tempDir = await getTemporaryDirectory();
-      final safeName = result.fileName.replaceAll(RegExp(r'[<>:"/\\|?*]'), '_');
-      final tempFile = File('${tempDir.path}/$safeName');
-      await tempFile.writeAsBytes(result.bytes);
-
       final openResult = await OpenFilex.open(
         tempFile.path,
-        type: result.contentType,
+        type: widget.doc.contentType,
       );
 
       if (openResult.type != ResultType.done && mounted) {
@@ -1417,7 +1414,7 @@ class _DocumentCardState extends State<_DocumentCard> {
                 )
               else
                 Icon(
-                  Icons.download_rounded,
+                  Icons.open_in_new_rounded,
                   size: 20,
                   color: widget.accent,
                 ),
@@ -1428,3 +1425,4 @@ class _DocumentCardState extends State<_DocumentCard> {
     );
   }
 }
+

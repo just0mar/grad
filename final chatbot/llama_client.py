@@ -10,6 +10,7 @@ import requests
 from analytics import SUPPORTED_METRICS, detect_stat_metric, parse_question, parse_stat_question
 from rag_engine import RetrievedChunk, chunks_to_context
 from services.groq_client import GroqClient
+from language_utils import classifier_language_instruction, response_language_instruction
 
 
 NOT_FOUND_MESSAGE = "I couldn't find this information in the uploaded PDF reports."
@@ -308,7 +309,8 @@ def classify_question(
 
     system = (
         "You classify basketball coach questions about uploaded FIBA PDF reports. "
-        "Return JSON only. Do not calculate statistics or answer the question."
+        "Return JSON only. Do not calculate statistics or answer the question. "
+        f"{classifier_language_instruction()}"
     )
     player_hint = ", ".join((available_players or [])[:80])
     prompt = f"""
@@ -420,9 +422,10 @@ def format_analytics_answer(question: str, analytics_answer: str, client: Ollama
         return analytics_answer
 
     system = (
-        "You are a professional basketball analyst formatting an answer for a coach. "
-        "Do not calculate statistics. Do not add new numbers, names, games, or sources. "
-        "Use only the provided Pandas analytics draft. Preserve the meaning and sources."
+        "You are a professional basketball analyst polishing an answer for a coach. "
+        "The draft answer contains correct statistics. Format it into a clear, concise sentence or list. "
+        "Do not add any numbers or claims that are not in the draft. "
+        f"{response_language_instruction(question)}"
     )
     prompt = f"""
 Question:
@@ -454,9 +457,10 @@ def answer_from_chunks(question: str, chunks: list[RetrievedChunk], client: Olla
 
     context = chunks_to_context(chunks)
     system = (
-        "You are a professional basketball analyst helping a coach. "
-        "Answer using only the provided PDF context. If the answer is not directly supported, "
-        f"say exactly: {NOT_FOUND_MESSAGE}"
+        "You are a professional basketball assistant for a coach. Answer the question using ONLY the provided text extracts. "
+        "If the answer is not in the text, say exactly: 'I couldn't find this information in the uploaded PDF reports.' "
+        "Do not guess or add outside information. "
+        f"{response_language_instruction(question)}"
     )
     prompt = f"""
 Use only these retrieved PDF chunks to answer the coach's question.
@@ -485,7 +489,8 @@ def polish_stat_answer(question: str, numeric_answer: str, client: OllamaClient)
 
     system = (
         "You are a professional basketball analyst. Rewrite the supplied numeric answer clearly for a coach. "
-        "Do not add, remove, or change any numbers, names, rankings, or sources."
+        "Do not add, remove, or change any numbers, names, rankings, or sources. "
+        f"{response_language_instruction(question)}"
     )
     prompt = f"""
 Coach question:

@@ -136,6 +136,8 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     messageId: msg.messageId,
     text: msg.content,
     fromMe: msg.senderUserId == currentUserId,
+    senderName: msg.senderName,
+    senderImageUrl: msg.senderProfileImageUrl,
     sentAt: msg.sentAt,
     editedAt: msg.editedAt,
     isDeleted: msg.isDeleted ?? false,
@@ -309,7 +311,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     try {
       final msg = state.messages.firstWhere(
         (m) => m.messageId == event.messageId,
-        orElse: () => ChatMessage(text: '', fromMe: false),
+        orElse: () => ChatMessage(messageId: '', text: '', fromMe: false, sentAt: DateTime.now()),
       );
       final hasReaction = msg.reactions.any(
         (r) => r.userId == currentUserId && r.emoji == event.emoji,

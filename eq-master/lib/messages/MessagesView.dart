@@ -5,6 +5,7 @@ import '../chat/ChatView.dart';
 import '../core/app_background.dart';
 import '../core/app_transitions.dart';
 import '../core/responsive_system.dart';
+import '../core/cached_image_widget.dart';
 import '../services/api_client.dart';
 import '../session/session_bloc.dart';
 import '../team/team_bloc.dart';
@@ -172,8 +173,9 @@ class _MessageCard extends StatelessWidget {
               conversationId: member.conversationId,
               personName: member.name,
               personImage: resolvedUrl ?? member.image,
-              currentUserId:
-                  context.read<SessionBloc>().state.user?.userId ?? '',
+              teamName: member.teamName,
+              isGroup: member.isGroup,
+              currentUserId: context.read<SessionBloc>().state.user?.userId ?? '',
             ),
           ),
         );
@@ -190,9 +192,21 @@ class _MessageCard extends StatelessWidget {
           child: Row(
             children: [
               hasNetworkImage
-                  ? CircleAvatar(
-                      backgroundImage: NetworkImage(resolvedUrl),
-                      radius: 28,
+                  ? ClipOval(
+                      child: CachedImageWidget(
+                        imageUrl: resolvedUrl!,
+                        width: 56,
+                        height: 56,
+                        fit: BoxFit.cover,
+                        errorWidget: Container(
+                          color: isDark ? const Color(0xFF0D2A1C) : Colors.grey[300],
+                          child: Icon(
+                            member.isGroup ? Icons.groups : Icons.person,
+                            size: 28,
+                            color: isDark ? Colors.white54 : Colors.grey[600],
+                          ),
+                        ),
+                      ),
                     )
                   : CircleAvatar(
                       radius: 28,
@@ -219,6 +233,20 @@ class _MessageCard extends StatelessWidget {
                         color: isDark ? Colors.white : Colors.black,
                       ),
                     ),
+                    if (member.teamName != null && member.teamName!.isNotEmpty && !member.isGroup)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 2),
+                        child: Text(
+                          member.teamName!,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontFamily: 'SFPro',
+                            fontSize: 12,
+                            color: isDark ? Colors.white54 : Colors.grey[600],
+                          ),
+                        ),
+                      ),
                     _buildLastMessagePreview(context, member, isDark),
                   ],
                 ),

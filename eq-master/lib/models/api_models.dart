@@ -851,11 +851,13 @@ class ConversationParticipantDto {
   final String userId;
   final String name;
   final String? profileImageUrl;
+  final String? teamName;
 
   const ConversationParticipantDto({
     required this.userId,
     required this.name,
     this.profileImageUrl,
+    this.teamName,
   });
 
   factory ConversationParticipantDto.fromJson(Map<String, dynamic> json) =>
@@ -863,6 +865,7 @@ class ConversationParticipantDto {
         userId: (json['userId'] ?? '').toString(),
         name: (json['name'] ?? '').toString(),
         profileImageUrl: json['profileImageUrl']?.toString(),
+        teamName: json['teamName']?.toString(),
       );
 }
 
@@ -871,6 +874,7 @@ class MessageDto {
   final String conversationId;
   final String senderUserId;
   final String senderName;
+  final String? senderProfileImageUrl;
   final String content;
   final DateTime sentAt;
   final DateTime? editedAt;
@@ -893,6 +897,7 @@ class MessageDto {
     required this.conversationId,
     required this.senderUserId,
     required this.senderName,
+    this.senderProfileImageUrl,
     required this.content,
     required this.sentAt,
     this.editedAt,
@@ -916,6 +921,7 @@ class MessageDto {
     conversationId: (json['conversationId'] ?? '').toString(),
     senderUserId: (json['senderUserId'] ?? '').toString(),
     senderName: (json['senderName'] ?? '').toString(),
+    senderProfileImageUrl: json['senderProfileImageUrl']?.toString(),
     content: (json['content'] ?? '').toString(),
     sentAt: DateTime.tryParse('${json['sentAt']}') ?? DateTime.now(),
     editedAt: json['editedAt'] != null

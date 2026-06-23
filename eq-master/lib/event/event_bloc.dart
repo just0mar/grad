@@ -222,19 +222,14 @@ class EventBloc extends Bloc<EventEvent, EventState> {
         body['recurrenceEndDate'] =
             DateTime.utc(d.year, d.month, d.day, 12).toIso8601String();
       }
-      final dto = await _eventService.createEvent(
+      await _eventService.createEvent(
         event.clubId!,
         event.teamId!,
         body,
       );
-      final newEvents = List<Event>.from(state.events)..add(Event.fromDto(dto));
-      newEvents.sort((a, b) => a.date.compareTo(b.date));
-      emit(state.copyWith(
-        events: newEvents,
-        eventsByDay: _rebuildEventsByDay(newEvents),
-        upcomingEvents: _computeUpcoming(newEvents),
-        isLoading: false,
-      ));
+      
+      // Instead of just appending one event, reload all to capture recurring events
+      add(LoadEvents(clubId: event.clubId, teamId: event.teamId));
     } on ApiException catch (e) {
       emit(state.copyWith(isLoading: false, error: e.message));
     } catch (_) {

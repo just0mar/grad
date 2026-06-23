@@ -86,20 +86,33 @@ class _ProfileViewState extends State<ProfileView> with TickerProviderStateMixin
       }
       final expText = _expCtrl.text.trim();
       final expVal = expText.isEmpty ? null : int.tryParse(expText);
+      final nameText = _nameCtrl.text.trim();
+      final finalName = nameText.isEmpty ? 'Mystery Athlete' : nameText;
+
       // Username is optional: when left blank, send null so the field is
       // simply omitted from the update (an empty string would be rejected by
       // the server's username rules).
       final usernameText = _usernameCtrl.text.trim();
       final updated = await svc.updateProfile(
-        name: _nameCtrl.text.trim(),
+        name: finalName,
         username: usernameText.isEmpty ? null : usernameText,
         bio: _bioCtrl.text.trim(),
         yearsOfExperience: expVal,
       );
+      
       final finalUser = newImgUrl != null
           ? updated.copyWith(profileImageUrl: newImgUrl)
           : updated;
+
       if (mounted) {
+        if (nameText.isEmpty) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Name cannot be empty! We gave you a cool fallback name.'),
+              backgroundColor: Colors.blueAccent,
+            ),
+          );
+        }
         context.read<SessionBloc>().add(SessionUserUpdated(finalUser));
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(AppLocalizations.of(context).profileUpdated)),

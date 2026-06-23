@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 import re
 from difflib import SequenceMatcher
@@ -8,6 +8,7 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
+from language_utils import expand_query_for_matching
 from extract_pdfs import BOX_SCORE_CSV
 
 
@@ -490,7 +491,7 @@ def stat_metric_patterns() -> list[tuple[str, list[str]]]:
 
 
 def detect_stat_metric(question: str) -> str | None:
-    q = question.lower().strip()
+    q = expand_query_for_matching(question)
     if is_ball_pressure_question(q):
         return "steals"
     free_throw_metric = detect_free_throw_metric(q)
@@ -503,7 +504,7 @@ def detect_stat_metric(question: str) -> str | None:
 
 
 def parse_stat_question(question: str, default_team: str = "EGY") -> dict[str, Any]:
-    q = question.lower().strip()
+    q = expand_query_for_matching(question)
 
     top_n = extract_top_n(q, default=3, most_one=True)
 
@@ -546,7 +547,7 @@ def parse_question(
     available_players: list[str] | None = None,
     default_team: str = "EGY",
 ) -> dict[str, Any]:
-    q = question.lower().strip()
+    q = expand_query_for_matching(question)
     team = next((code for alias, code in TEAM_ALIASES.items() if re.search(rf"\b{alias}\b", q)), default_team)
     available_players = available_players or []
     players = extract_player_names(question, available_players)

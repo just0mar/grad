@@ -57,6 +57,16 @@ class LeaveTeam extends TeamEvent {
   List<Object?> get props => [clubId, teamId];
 }
 
+class RemoveMember extends TeamEvent {
+  final String clubId;
+  final String teamId;
+  final String memberId;
+  RemoveMember({required this.clubId, required this.teamId, required this.memberId});
+
+  @override
+  List<Object?> get props => [clubId, teamId, memberId];
+}
+
 class ClearTeamMessage extends TeamEvent {}
 
 class UpdateMemberStatus extends TeamEvent {
@@ -180,6 +190,7 @@ class TeamBloc extends Bloc<TeamEvent, TeamState> {
       );
     });
     on<LeaveTeam>(_onLeaveTeam);
+    on<RemoveMember>(_onRemoveMember);
     on<UpdateMemberStatus>(_onUpdateMemberStatus);
     on<UpdateMemberData>(_onUpdateMemberData);
     on<AddTeamMember>(_onAddTeamMember);
@@ -442,6 +453,40 @@ class TeamBloc extends Bloc<TeamEvent, TeamState> {
           permissionError: 'Could not leave team. Please try again.',
         ),
       );
+    }
+  }
+
+  Future<void> _onRemoveMember(RemoveMember event, Emitter<TeamState> emit) async {
+    emit(
+      state.copyWith(
+        isLoading: true,
+        clearPermissionError: true,
+        clearSuccessMessage: true,
+      ),
+    );
+
+    try {
+      await _teamService.leaveTeam(
+        event.clubId,
+        event.teamId,
+        event.memberId,
+      );
+
+      final currentMembers = List<Member>.from(state.members)
+          ..removeWhere((m) => m.userId == event.memberId);
+      final updatedMap = Map<String, List<Member>>.from(state.membersByTeamId)
+        ..[event.teamId] = currentMembers;
+
+      emit(
+        state.copyWith(
+          isLoading: false,
+          members: currentMembers,
+          membersByTeamId: updatedMap,
+          successMessage: 'Member removed successfully',
+        ),
+      );
+    } catch (e) {
+      emit(state.copyWith(permissionError: 'Failed to remove member: $e', isLoading: false));
     }
   }
 }

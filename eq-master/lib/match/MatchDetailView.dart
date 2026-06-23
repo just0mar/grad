@@ -338,6 +338,13 @@ class _MatchDetailViewState extends State<MatchDetailView>
   }
 
   Future<void> _saveSquad(BuildContext context) async {
+    if (_starterIds.length != 5) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(AppLocalizations.of(context).squadSaveError('You must select exactly 5 starters.'))),
+      );
+      return;
+    }
+
     final teamState = context.read<TeamBloc>().state;
     final selected = teamState.availableTeams
         .where((t) => t.id == teamState.selectedTeamId)
@@ -1098,8 +1105,16 @@ class _MatchDetailViewState extends State<MatchDetailView>
 
       // Use FileCacheService to get the file instantly if downloaded before
       final fileCache = FileCacheService.instance;
-      final tempFile = await fileCache.getFile('/events/documents/${doc.documentId}/download');
       
+      // Extract the extension from the original file name
+      final ext = doc.originalFileName.contains('.') 
+          ? '.${doc.originalFileName.split('.').last}' 
+          : '';
+
+      final tempFile = await fileCache.getFile(
+        '/events/documents/${doc.documentId}/download',
+        extension: ext,
+      );
       if (!mounted) return;
 
       // Dismiss the loading snackbar
@@ -2943,20 +2958,9 @@ class _MatchDetailViewState extends State<MatchDetailView>
     if (_openingRawPdf) return;
     setState(() => _openingRawPdf = true);
     try {
-      final file =
-          await _statsService.downloadRawStatsPdf(clubId, teamId, event.eventId);
+      final tempFile = await FileCacheService.instance.getFile('/clubs/$clubId/teams/$teamId/stats/matches/${event.eventId}/raw-pdf', extension: '.pdf', contentType: 'application/pdf');
       if (!mounted) return;
-
-      final tempDir = await getTemporaryDirectory();
-      final rawName = _rawPdfFileName?.trim().isNotEmpty == true
-          ? _rawPdfFileName!.trim()
-          : file.fileName;
-      final sanitizedName = rawName.replaceAll(RegExp(r'[<>:"/\\|?*]'), '_');
-      final tempFile = File('${tempDir.path}/$sanitizedName');
-      await tempFile.writeAsBytes(file.bytes);
-
-      final result =
-          await OpenFilex.open(tempFile.path, type: file.contentType);
+      final result = await OpenFilex.open(tempFile.path, type: 'application/pdf');
       if (result.type != ResultType.done && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(AppLocalizations.of(context).openFileError(result.message))),
@@ -4397,4 +4401,5 @@ class _DocumentDescriptionBottomSheetState
     );
   }
 }
+
 

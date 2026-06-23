@@ -26,9 +26,21 @@ class FileCacheService {
     return digest.toString();
   }
 
+  static String extensionFromContentType(String contentType) {
+    if (contentType.contains('pdf')) return '.pdf';
+    if (contentType.contains('wordprocessingml') || contentType.contains('msword')) return '.docx';
+    if (contentType.contains('spreadsheetml') || contentType.contains('excel')) return '.xlsx';
+    if (contentType.contains('presentationml') || contentType.contains('powerpoint')) return '.pptx';
+    if (contentType.contains('jpeg') || contentType.contains('jpg')) return '.jpg';
+    if (contentType.contains('png')) return '.png';
+    if (contentType.contains('mp4')) return '.mp4';
+    if (contentType.contains('text/plain')) return '.txt';
+    return '';
+  }
+
   /// Gets a file from cache or downloads it.
   /// Use for documents and media.
-  Future<File> getFile(String urlPath) async {
+  Future<File> getFile(String urlPath, {String? extension, String? contentType}) async {
     if (kIsWeb) {
       throw UnsupportedError('File caching is not supported on web.');
     }
@@ -36,8 +48,13 @@ class FileCacheService {
     final cacheDir = await _getCacheDir();
     final hashedName = _hashUrl(urlPath);
     
-    // We try to guess the extension from the URL if possible, otherwise leave it off.
-    final ext = urlPath.contains('.') ? '.${urlPath.split('.').last.split('?').first}' : '';
+    // We try to guess the extension from the URL if possible, or use the provided one.
+    String ext = extension ?? (urlPath.contains('.') ? '.${urlPath.split('.').last.split('?').first}' : '');
+    if (ext.isEmpty && contentType != null) {
+      ext = extensionFromContentType(contentType);
+    }
+    if (ext.isNotEmpty && !ext.startsWith('.')) ext = '.$ext';
+
     final localFile = File('${cacheDir.path}/$hashedName$ext');
 
     if (await localFile.exists()) {

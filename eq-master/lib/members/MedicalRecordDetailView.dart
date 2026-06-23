@@ -4,6 +4,7 @@ import 'dart:typed_data';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import '../services/file_cache_service.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:open_filex/open_filex.dart';
@@ -122,20 +123,10 @@ class _MedicalRecordDetailViewState extends State<MedicalRecordDetailView> {
       _downloadingRequestId = doc.requestId;
     });
     try {
-      final result = await _medicalService.downloadDocument(doc.requestId);
-
-      // Save to temp directory and open with external app
-      final tempDir = await getTemporaryDirectory();
-      final safeName = _safeFileName(result.fileName);
-      final file = File('${tempDir.path}${Platform.pathSeparator}$safeName');
-      await file.writeAsBytes(result.bytes);
-
+      final ext = doc.fileName != null && doc.fileName!.contains('.') ? '.${doc.fileName!.split('.').last}' : '';
+      final tempFile = await FileCacheService.instance.getFile('/medical/document-requests/${doc.requestId}/download', extension: ext, contentType: doc.contentType);
       if (!mounted) return;
-
-      final openResult = await OpenFilex.open(
-        file.path,
-        type: result.contentType,
-      );
+      final openResult = await OpenFilex.open(tempFile.path, type: doc.contentType);
 
       if (openResult.type != ResultType.done && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -724,12 +715,12 @@ class _MedicalRecordDetailViewState extends State<MedicalRecordDetailView> {
                         : () => _downloadAndOpenDocument(doc),
                     icon: Icon(
                       isThisDownloading
-                          ? Icons.hourglass_top
-                          : Icons.download_rounded,
+                          ? Icons.hourglass_empty_rounded
+                          : Icons.open_in_new_rounded,
                       size: 16,
                     ),
                     label: Text(
-                      isThisDownloading ? 'Saving...' : 'Download',
+                      isThisDownloading ? 'Opening...' : 'Open',
                       style: const TextStyle(
                         fontFamily: 'SFPro',
                         fontSize: 13,
@@ -919,3 +910,4 @@ class _MedicalRecordDetailViewState extends State<MedicalRecordDetailView> {
     );
   }
 }
+

@@ -57,7 +57,9 @@ public class EventDocumentController : ControllerBase
         if (userId == null) return Unauthorized(new { error = "Invalid token." });
         if (file == null || file.Length == 0) return BadRequest(new { error = "A file is required." });
         var role = await GetTeamRoleAsync(teamId, userId.Value);
-        if (!IsTeamStaff(role) && !await IsClubManagerAsync(clubId, userId.Value))
+        var isAdmin = await _db.Users.AnyAsync(u => u.UserId == userId.Value && u.IsAdmin);
+        
+        if (!IsTeamStaff(role) && !await IsClubManagerAsync(clubId, userId.Value) && !isAdmin)
             return Forbid();
 
         await using var stream = file.OpenReadStream();
@@ -119,7 +121,9 @@ public class EventDocumentController : ControllerBase
         var userId = GetCallerUserId();
         if (userId == null) return Unauthorized(new { error = "Invalid token." });
         var role = await GetTeamRoleAsync(teamId, userId.Value);
-        if (!IsTeamStaff(role) && !await IsClubManagerAsync(clubId, userId.Value))
+        var isAdmin = await _db.Users.AnyAsync(u => u.UserId == userId.Value && u.IsAdmin);
+
+        if (!IsTeamStaff(role) && !await IsClubManagerAsync(clubId, userId.Value) && !isAdmin)
             return Forbid();
 
         var doc = await _db.EventDocuments.FirstOrDefaultAsync(d => d.DocumentId == documentId && d.EventId == eventId);
@@ -156,7 +160,7 @@ public class EventDocumentController : ControllerBase
 
     private bool IsTeamStaff(RoleNameType? role)
     {
-        return role is RoleNameType.TeamManager or RoleNameType.Coach or RoleNameType.FitnessCoach or RoleNameType.TeamDoctor;
+        return role is RoleNameType.TeamManager or RoleNameType.Coach or RoleNameType.FitnessCoach or RoleNameType.TeamDoctor or RoleNameType.TeamAnalyst;
     }
 
     private Task<bool> IsClubManagerAsync(Guid clubId, Guid userId) =>

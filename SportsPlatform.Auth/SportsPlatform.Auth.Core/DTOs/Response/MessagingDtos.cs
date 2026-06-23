@@ -16,6 +16,7 @@ public class ParticipantDto
     public Guid UserId { get; set; }
     public string Name { get; set; } = string.Empty;
     public string? ProfileImageUrl { get; set; }
+    public string? TeamName { get; set; }
 }
 
 public class MessageDto
@@ -24,6 +25,7 @@ public class MessageDto
     public Guid ConversationId { get; set; }
     public Guid SenderUserId { get; set; }
     public string SenderName { get; set; } = string.Empty;
+    public string? SenderProfileImageUrl { get; set; }
     public string Content { get; set; } = string.Empty;
     public DateTime SentAt { get; set; }
     public bool IsRead { get; set; }

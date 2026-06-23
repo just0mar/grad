@@ -39,6 +39,7 @@ class CustomAppBar extends StatefulWidget implements PreferredSizeWidget {
   final List<Map<String, dynamic>>? plans;
   final String userRole;
   final bool showTeamSwitcher;
+  final List<Widget>? actions;
 
   const CustomAppBar({
     super.key,
@@ -48,6 +49,7 @@ class CustomAppBar extends StatefulWidget implements PreferredSizeWidget {
     this.plans,
     this.userRole = '',
     this.showTeamSwitcher = false,
+    this.actions,
   });
 
   @override
@@ -146,6 +148,7 @@ class _CustomAppBarState extends State<CustomAppBar> {
             )
           : null,
       actions: [
+        if (widget.actions != null) ...widget.actions!,
         AnimatedButton.icon(
           child: IconButton(
             icon: Icon(Icons.search, color: iconColor),
