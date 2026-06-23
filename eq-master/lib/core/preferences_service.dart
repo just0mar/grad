@@ -45,4 +45,30 @@ class PreferencesService {
   static Future<void> clear() async {
     await _prefs.clear();
   }
+
+  // Onboarding preference
+  static const String _hasSeenOnboardingKey = 'has_seen_onboarding';
+
+  static Future<void> setHasSeenOnboarding(bool value) async {
+    await _prefs.setBool(_hasSeenOnboardingKey, value);
+  }
+
+  static bool hasSeenOnboarding() {
+    return _prefs.getBool(_hasSeenOnboardingKey) ?? false;
+  }
+
+  // Pending Invite Token
+  static const String _pendingInviteTokenKey = 'pending_invite_token';
+
+  static Future<void> savePendingInviteToken(String token) async {
+    await _prefs.setString(_pendingInviteTokenKey, token);
+  }
+
+  static String? getPendingInviteToken() {
+    return _prefs.getString(_pendingInviteTokenKey);
+  }
+
+  static Future<void> clearPendingInviteToken() async {
+    await _prefs.remove(_pendingInviteTokenKey);
+  }
 }

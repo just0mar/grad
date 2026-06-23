@@ -7,6 +7,9 @@ import '../core/animated_button.dart';
 import '../core/app_transitions.dart';
 import '../session/session_bloc.dart';
 import '../core/app_localizations.dart';
+import '../core/preferences_service.dart';
+import '../jointeam/JoinTeamView.dart';
+import '../main.dart' show MyApp;
 
 class CongratsView extends StatelessWidget {
   const CongratsView({super.key});
@@ -67,16 +70,35 @@ class CongratsView extends StatelessWidget {
                       ),
                       onPressed: () {
                         final session = context.read<SessionBloc>().state;
-                        Navigator.pushReplacement(
-                          context,
-                          AppFadeRoute(
-                            child: MainNavigation(
-                              userRole: session.currentRole ?? '',
-                              userId: session.user?.userId ?? '',
+                        final pendingToken = PreferencesService.getPendingInviteToken();
+                        if (pendingToken != null) {
+                          PreferencesService.clearPendingInviteToken();
+                          Navigator.pushReplacement(
+                            context,
+                            AppFadeRoute(
+                              child: MainNavigation(
+                                userRole: session.currentRole ?? '',
+                                userId: session.user?.userId ?? '',
+                              ),
+                              settings: const RouteSettings(name: '/'),
                             ),
-                            settings: const RouteSettings(name: '/'),
-                          ),
-                        );
+                          );
+                          Navigator.push(
+                            MyApp.navigatorKey.currentContext ?? context,
+                            AppFadeRoute(child: const JoinTeamView()),
+                          );
+                        } else {
+                          Navigator.pushReplacement(
+                            context,
+                            AppFadeRoute(
+                              child: MainNavigation(
+                                userRole: session.currentRole ?? '',
+                                userId: session.user?.userId ?? '',
+                              ),
+                              settings: const RouteSettings(name: '/'),
+                            ),
+                          );
+                        }
                       },
                       child: Text(
                         t.obLetsStart,

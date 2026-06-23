@@ -955,10 +955,10 @@ class _TeamCard extends StatelessWidget {
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(14),
                         child: imageUrl != null
-                            ? Image.network(
-                                imageUrl!,
+                            ? CachedImageWidget(
+                                imageUrl: imageUrl!,
                                 fit: BoxFit.cover,
-                                errorBuilder: (_, __, ___) => const Icon(
+                                errorWidget: const Icon(
                                   Icons.sports_basketball,
                                   color: Colors.green,
                                   size: 36,

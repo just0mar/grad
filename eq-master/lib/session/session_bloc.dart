@@ -9,6 +9,7 @@ import '../services/api_client.dart';
 import '../services/auth_service.dart';
 import '../services/club_service.dart';
 import '../services/team_service.dart';
+import '../services/file_cache_service.dart';
 
 abstract class SessionEvent extends Equatable {
   @override
@@ -201,6 +202,12 @@ class SessionBloc extends Bloc<SessionEvent, SessionState> {
         await AuthService().logout(refreshToken);
       } catch (_) {}
     }
+    
+    // Wipe local storage cache securely on logout
+    try {
+      await FileCacheService.instance.clearCache();
+    } catch (_) {}
+
     await _api.clearSession();
     emit(const SessionState(status: SessionStatus.unauthenticated));
   }

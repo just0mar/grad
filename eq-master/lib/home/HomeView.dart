@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import '../core/cached_image_widget.dart';
 import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
@@ -1416,11 +1417,11 @@ class _EditableAnnouncementCardState extends State<_EditableAnnouncementCard>
       );
     }
 
-    return Image.network(
-      imageUrl!,
+    return CachedImageWidget(
+      imageUrl: imageUrl!,
       fit: BoxFit.cover,
       width: double.infinity,
-      errorBuilder: (_, __, ___) => _announcementImageFallback(accent),
+      errorWidget: _announcementImageFallback(accent),
     );
   }
 

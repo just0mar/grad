@@ -27,6 +27,7 @@ import '../models/api_models.dart';
 import '../plans/PlansView.dart';
 import '../services/api_client.dart';
 import '../services/event_document_service.dart';
+import '../services/file_cache_service.dart';
 import '../services/event_service.dart';
 import '../services/plan_service.dart';
 import '../services/stats_service.dart';
@@ -351,18 +352,22 @@ class _MatchDetailViewState extends State<MatchDetailView>
     int order = 0;
     for (final id in _starterIds) {
       final member = teamState.members.where((m) => m.userId == id).toList();
+      var pos = member.isNotEmpty ? (member.first.position ?? '') : '';
+      if (pos.trim().isEmpty) pos = 'Unassigned';
       players.add({
         'playerUserId': id,
-        'position': member.isNotEmpty ? (member.first.position ?? '') : '',
+        'position': pos,
         'unit': 'Starting',
         'sortOrder': order++,
       });
     }
     for (final id in _reserveIds) {
       final member = teamState.members.where((m) => m.userId == id).toList();
+      var pos = member.isNotEmpty ? (member.first.position ?? '') : '';
+      if (pos.trim().isEmpty) pos = 'Unassigned';
       players.add({
         'playerUserId': id,
-        'position': member.isNotEmpty ? (member.first.position ?? '') : '',
+        'position': pos,
         'unit': 'Reserve',
         'sortOrder': order++,
       });
@@ -426,23 +431,32 @@ class _MatchDetailViewState extends State<MatchDetailView>
 
   void _togglePlayer(String userId) {
     if (!_isSquadEditing) return;
-    setState(() {
-      if (!_showReserves) {
-        if (_starterIds.contains(userId)) {
-          _starterIds.remove(userId);
-        } else {
+    
+    if (!_showReserves) {
+      if (_starterIds.contains(userId)) {
+        setState(() => _starterIds.remove(userId));
+      } else {
+        if (_starterIds.length >= 5) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(AppLocalizations.of(context).squadSaveError('Maximum 5 starters allowed.'))),
+          );
+          return;
+        }
+        setState(() {
           _reserveIds.remove(userId);
           _starterIds.add(userId);
-        }
+        });
+      }
+    } else {
+      if (_reserveIds.contains(userId)) {
+        setState(() => _reserveIds.remove(userId));
       } else {
-        if (_reserveIds.contains(userId)) {
-          _reserveIds.remove(userId);
-        } else {
+        setState(() {
           _starterIds.remove(userId);
           _reserveIds.add(userId);
-        }
+        });
       }
-    });
+    }
   }
 
   // ═══════════════════════════════════════════════════════════════════════
@@ -1002,7 +1016,7 @@ class _MatchDetailViewState extends State<MatchDetailView>
   }
 
   Future<void> _pickAndUploadDocument() async {
-    final result = await FilePicker.platform.pickFiles();
+    final result = await FilePicker.platform.pickFiles(withData: true);
     if (result == null || result.files.isEmpty) return;
     final file = result.files.first;
     final String? path = kIsWeb ? null : file.path;
@@ -1082,22 +1096,19 @@ class _MatchDetailViewState extends State<MatchDetailView>
         );
       }
 
-      final file = await _docService.downloadDocument(doc.documentId);
+      // Use FileCacheService to get the file instantly if downloaded before
+      final fileCache = FileCacheService.instance;
+      final tempFile = await fileCache.getFile('/events/documents/${doc.documentId}/download');
+      
       if (!mounted) return;
 
       // Dismiss the loading snackbar
       ScaffoldMessenger.of(context).hideCurrentSnackBar();
 
-      // Save to temporary directory
-      final tempDir = await getTemporaryDirectory();
-      final sanitizedName = doc.originalFileName.replaceAll(RegExp(r'[<>:"/\\|?*]'), '_');
-      final tempFile = File('${tempDir.path}/$sanitizedName');
-      await tempFile.writeAsBytes(file.bytes);
-
       // Open with the device's default app
       final result = await OpenFilex.open(
         tempFile.path,
-        type: file.contentType,
+        type: doc.contentType,
       );
 
       if (result.type != ResultType.done && mounted) {
@@ -2180,7 +2191,7 @@ class _MatchDetailViewState extends State<MatchDetailView>
                     .where((a) => a.playerUserId == member.userId)
                     .toList();
                 final serverStatus = existing.isEmpty
-                    ? 'Absent'
+                    ? 'Present'
                     : existing.first.status;
                 final status = _isAttendanceEditing
                     ? (_localAttendance[member.userId] ?? serverStatus)

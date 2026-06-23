@@ -245,17 +245,54 @@ class ApiClient {
   }
 
   /// GET a file endpoint and return the raw response (bytes + headers).
-  /// Useful for downloading documents that need auth headers.
+  /// Automatically intercepts 301/302 redirects and drops the Authorization header
+  /// before following them (to prevent GCS 400 Bad Request errors).
   Future<http.Response> getFile(String path) async {
     final uri = _uri(path);
     final hdrs = await _headers();
-    hdrs.remove('Content-Type'); // not needed for file download
-    var response = await _client.get(uri, headers: hdrs);
+    hdrs.remove('Content-Type');
+
+    // Send request without auto-following redirects so we can strip auth if needed
+    final request = http.Request('GET', uri)..headers.addAll(hdrs);
+    request.followRedirects = false;
+    
+    var streamed = await _client.send(request);
+    var response = await http.Response.fromStream(streamed);
+
     if (response.statusCode == 401 && await _tryRefresh()) {
       final refreshedHdrs = await _headers();
       refreshedHdrs.remove('Content-Type');
-      response = await _client.get(uri, headers: refreshedHdrs);
+      final retryReq = http.Request('GET', uri)..headers.addAll(refreshedHdrs);
+      retryReq.followRedirects = false;
+      streamed = await _client.send(retryReq);
+      response = await http.Response.fromStream(streamed);
     }
+
+    // Handle Redirects manually
+    if (response.statusCode >= 300 && response.statusCode < 400) {
+      final location = response.headers['location'];
+      if (location != null) {
+        final redirectUri = Uri.parse(location);
+        // Follow redirect WITHOUT our API authorization headers (GCS will reject them)
+        final redirectResponse = await _client.get(redirectUri);
+        if (redirectResponse.statusCode < 200 || redirectResponse.statusCode >= 300) {
+          throw ApiException(redirectResponse.statusCode, 'Failed to download redirected file.');
+        }
+        // Preserve original content-disposition if the redirect target didn't provide one
+        final newHeaders = Map<String, String>.from(redirectResponse.headers);
+        if (!newHeaders.containsKey('content-disposition') && response.headers.containsKey('content-disposition')) {
+          newHeaders['content-disposition'] = response.headers['content-disposition']!;
+        }
+        return http.Response(
+          redirectResponse.body,
+          redirectResponse.statusCode,
+          headers: newHeaders,
+          isRedirect: false,
+          request: redirectResponse.request,
+        );
+      }
+    }
+
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw ApiException(response.statusCode, 'Failed to download file.');
     }

@@ -18,6 +18,7 @@ import 'core/design_tokens.dart';
 import 'core/responsive_system.dart';
 import 'navigation/MainNavigation.dart';
 import 'session/session_bloc.dart';
+import 'core/deep_link_service.dart';
 
 void main() async {
   // Replace Flutter's raw red error screen with a calm, branded fallback so
@@ -64,10 +65,12 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    DeepLinkService().init();
   }
 
   @override
   void dispose() {
+    DeepLinkService().dispose();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -325,6 +328,8 @@ class SplashView extends StatefulWidget {
 class _SplashViewState extends State<SplashView>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
+  bool _minTimePassed = false;
+  bool _navigated = false;
 
   @override
   void initState() {
@@ -334,23 +339,36 @@ class _SplashViewState extends State<SplashView>
       duration: const Duration(seconds: 5),
     )..repeat();
 
-    Timer(const Duration(seconds: 4), () {
+    // Ensure the splash screen is visible for at least 2.5 seconds
+    Timer(const Duration(milliseconds: 2500), () {
       if (!mounted) return;
-      final session = context.read<SessionBloc>().state;
-      final destination = session.status == SessionStatus.authenticated
-          ? MainNavigation(
-              userRole: session.currentRole ?? '',
-              userId: session.user?.userId ?? '',
-            )
-          : const OnboardingView();
-      Navigator.pushReplacement(
-        context,
-        AppFadeRoute(
-          settings: const RouteSettings(name: '/'),
-          child: destination,
-        ),
-      );
+      setState(() => _minTimePassed = true);
+      _checkAndNavigate(context.read<SessionBloc>().state);
     });
+  }
+
+  void _checkAndNavigate(SessionState state) {
+    if (!_minTimePassed) return;
+    if (state.status == SessionStatus.unknown) return;
+    if (_navigated) return;
+    
+    _navigated = true;
+    final destination = state.status == SessionStatus.authenticated
+        ? MainNavigation(
+            userRole: state.currentRole ?? '',
+            userId: state.user?.userId ?? '',
+          )
+        : (PreferencesService.hasSeenOnboarding()
+            ? const LoginView()
+            : const OnboardingView());
+            
+    Navigator.pushReplacement(
+      context,
+      AppFadeRoute(
+        settings: const RouteSettings(name: '/'),
+        child: destination,
+      ),
+    );
   }
 
   @override
@@ -363,40 +381,44 @@ class _SplashViewState extends State<SplashView>
   Widget build(BuildContext context) {
     double logoSize = MediaQuery.of(context).size.width * 0.8;
     if (logoSize > 630) logoSize = 630;
-    return Scaffold(
-      body: AppBackground(
-        child: Stack(
-          children: [
-            Center(
-              child: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    RotationTransition(
-                      turns: _controller,
-                      child: Image.asset(
-                        'assets/logo.png',
-                        width: logoSize,
-                        height: logoSize,
+    
+    return BlocListener<SessionBloc, SessionState>(
+      listener: (context, state) => _checkAndNavigate(state),
+      child: Scaffold(
+        body: AppBackground(
+          child: Stack(
+            children: [
+              Center(
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      RotationTransition(
+                        turns: _controller,
+                        child: Image.asset(
+                          'assets/logo.png',
+                          width: logoSize,
+                          height: logoSize,
+                        ),
                       ),
-                    ),
-                    Text(
-                      'EQUIPEX',
-                      style: TextStyle(
-                        fontFamily: 'Facon',
-                        fontSize: 26,
-                        fontWeight: FontWeight.bold,
-                        color: Theme.of(context).brightness == Brightness.dark
-                            ? Colors.white
-                            : Colors.black,
-                        letterSpacing: 1.5,
+                      Text(
+                        'EQUIPEX',
+                        style: TextStyle(
+                          fontFamily: 'Facon',
+                          fontSize: 26,
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? Colors.white
+                              : Colors.black,
+                          letterSpacing: 1.5,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -430,6 +452,7 @@ class _OnboardingViewState extends State<OnboardingView> {
   }
 
   void _goToLogin() {
+    PreferencesService.setHasSeenOnboarding(true);
     Navigator.pushReplacement(
       context,
       AppFadeRoute(
@@ -509,13 +532,16 @@ class _OnboardingViewState extends State<OnboardingView> {
                     minimumSize: const Size(double.infinity, 50),
                     side: const BorderSide(color: Colors.green),
                   ),
-                  onPressed: () => Navigator.pushReplacement(
-                    context,
-                    AppFadeRoute(
-                      settings: const RouteSettings(name: '/'),
-                      child: const SignUpView(),
-                    ),
-                  ),
+                  onPressed: () {
+                    PreferencesService.setHasSeenOnboarding(true);
+                    Navigator.pushReplacement(
+                      context,
+                      AppFadeRoute(
+                        settings: const RouteSettings(name: '/'),
+                        child: const SignUpView(),
+                      ),
+                    );
+                  },
                   child: Text(t.createAccount),
                 ),
               ],

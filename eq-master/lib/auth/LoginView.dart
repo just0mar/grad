@@ -16,6 +16,9 @@ import 'auth_widgets.dart';
 import 'CompleteProfileView.dart';
 import '../core/app_localizations.dart';
 import 'google_sign_in_config.dart';
+import '../core/preferences_service.dart';
+import '../jointeam/JoinTeamView.dart';
+import '../main.dart' show MyApp, OnboardingView;
 
 // Brand green — matches the onboarding page buttons.
 const _kGreen = Colors.green;
@@ -97,14 +100,31 @@ class _LoginViewState extends State<LoginView>
         listener: (ctx, state) {
           if (state is Authenticated) {
             ctx.read<SessionBloc>().add(SessionStarted(state.auth));
-            Navigator.pushAndRemoveUntil(
-              ctx,
-              AppFadeRoute(
-                child: MainNavigation(userRole: '', userId: state.userId),
-                settings: const RouteSettings(name: '/'),
-              ),
-              (_) => false,
-            );
+            final pendingToken = PreferencesService.getPendingInviteToken();
+            if (pendingToken != null) {
+              PreferencesService.clearPendingInviteToken();
+              Navigator.pushAndRemoveUntil(
+                ctx,
+                AppFadeRoute(
+                  child: MainNavigation(userRole: '', userId: state.userId),
+                  settings: const RouteSettings(name: '/'),
+                ),
+                (_) => false,
+              );
+              Navigator.push(
+                MyApp.navigatorKey.currentContext ?? ctx,
+                AppFadeRoute(child: const JoinTeamView()),
+              );
+            } else {
+              Navigator.pushAndRemoveUntil(
+                ctx,
+                AppFadeRoute(
+                  child: MainNavigation(userRole: '', userId: state.userId),
+                  settings: const RouteSettings(name: '/'),
+                ),
+                (_) => false,
+              );
+            }
           } else if (state is ProfileCompletionRequired) {
             // New Google account — collect name + DOB before going to the app.
             if (_googleLoading) setState(() => _googleLoading = false);
@@ -149,13 +169,6 @@ class _LoginViewState extends State<LoginView>
                           // ── Back + title ──────────────────────────────────
                           Row(
                             children: [
-                              IconButton(
-                                icon: Icon(
-                                  Icons.arrow_back,
-                                  color: isDark ? Colors.white : Colors.black,
-                                ),
-                                onPressed: _goBack,
-                              ),
                               const SizedBox(width: 4),
                               Text(
                                 t.login,

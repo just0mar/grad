@@ -1,4 +1,5 @@
 import 'package:eqq/core/app_localizations.dart';
+import '../core/cached_image_widget.dart';
 import 'dart:async';
 import 'dart:io';
 
@@ -2907,7 +2908,7 @@ class _MediaViewerState extends State<_MediaViewer> {
             : InteractiveViewer(
                 minScale: 1,
                 maxScale: 4,
-                child: Image.network(widget.url, fit: BoxFit.contain),
+                child: CachedImageWidget(imageUrl: widget.url, fit: BoxFit.contain),
               ),
       ),
     );

@@ -78,14 +78,7 @@ class _SignUpViewState extends State<SignUpView>
     super.dispose();
   }
 
-  void _goBack() => Navigator.pushReplacement(
-    context,
-    AppFadeRoute(child: const OnboardingView(initialPage: 2)),
-  );
-
-  // Dismiss the keyboard first, then wait for the frame to settle
-  // before the date-picker dialog appears — eliminates the jank.
-  Future<void> _pickDob() async {
+  void _pickDob() async {
     FocusManager.instance.primaryFocus?.unfocus();
     // Wait for the unfocus to complete rendering instead of a fixed delay
     await Future(() {});
@@ -235,13 +228,6 @@ class _SignUpViewState extends State<SignUpView>
                           // ── Back + title ─────────────────────────────────
                           Row(
                             children: [
-                              IconButton(
-                                icon: Icon(
-                                  Icons.arrow_back,
-                                  color: isDark ? Colors.white : Colors.black,
-                                ),
-                                onPressed: _goBack,
-                              ),
                               const SizedBox(width: 4),
                               Text(
                                 t.signUpTitle,

@@ -70,6 +70,7 @@ class SettingsView extends StatelessWidget {
                 context: ctx,
                 label: t.yesLogOut,
                 onPressed: () {
+                  context.read<SessionBloc>().add(SessionLogoutRequested());
                   Navigator.pop(ctx);
                   Navigator.pushAndRemoveUntil(
                     context,
