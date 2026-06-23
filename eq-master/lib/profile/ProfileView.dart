@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import '../core/cached_image_widget.dart';
 import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
