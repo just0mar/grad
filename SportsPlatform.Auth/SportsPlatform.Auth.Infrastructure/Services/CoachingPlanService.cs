@@ -255,6 +255,13 @@ public class CoachingPlanService : ICoachingPlanService
 
         ApplyLineupPlayers(lineup, request.Players);
 
+        // Force EF to treat the new lineup players as Added instead of Modified.
+        // Because LineupPlayerId is a non-empty Guid, EF guesses they are Modified when added to a tracked entity's navigation.
+        foreach (var p in lineup.Players)
+        {
+            _db.Entry(p).State = Microsoft.EntityFrameworkCore.EntityState.Added;
+        }
+
         await _db.SaveChangesAsync();
         await NotifyVisiblePlanAsync(team, callerUserId, lineup.LineupId, lineup.Title, lineup.Visibility, "LineupUpdated", "Lineup updated");
         return await BuildLineupDtoAsync(lineupId);
