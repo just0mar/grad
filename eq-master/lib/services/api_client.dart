@@ -6,6 +6,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
+import 'package:mime/mime.dart';
 
 import '../config/app_config.dart';
 import '../main.dart';
@@ -182,10 +184,15 @@ class ApiClient {
     final token = await accessToken;
     if (token != null) request.headers['Authorization'] = 'Bearer $token';
     if (fields != null) request.fields.addAll(fields);
+
+    // Standardize upload: Prevent generic binary type by deducing MIME type from fileName
+    final mimeType = lookupMimeType(fileName) ?? 'application/octet-stream';
+    final mediaType = MediaType.parse(mimeType);
+
     if (fileBytes != null) {
-      request.files.add(http.MultipartFile.fromBytes(fileField, fileBytes, filename: fileName));
+      request.files.add(http.MultipartFile.fromBytes(fileField, fileBytes, filename: fileName, contentType: mediaType));
     } else if (filePath != null) {
-      request.files.add(await http.MultipartFile.fromPath(fileField, filePath, filename: fileName));
+      request.files.add(await http.MultipartFile.fromPath(fileField, filePath, filename: fileName, contentType: mediaType));
     }
     var streamed = await _client.send(request);
     var response = await http.Response.fromStream(streamed);
@@ -195,9 +202,9 @@ class ApiClient {
       if (token != null) retry.headers['Authorization'] = 'Bearer $token';
       if (fields != null) retry.fields.addAll(fields);
       if (fileBytes != null) {
-        retry.files.add(http.MultipartFile.fromBytes(fileField, fileBytes, filename: fileName));
+        retry.files.add(http.MultipartFile.fromBytes(fileField, fileBytes, filename: fileName, contentType: mediaType));
       } else if (filePath != null) {
-        retry.files.add(await http.MultipartFile.fromPath(fileField, filePath, filename: fileName));
+        retry.files.add(await http.MultipartFile.fromPath(fileField, filePath, filename: fileName, contentType: mediaType));
       }
       streamed = await _client.send(retry);
       response = await http.Response.fromStream(streamed);
@@ -218,10 +225,14 @@ class ApiClient {
     if (token != null) request.headers['Authorization'] = 'Bearer $token';
     if (fields != null) request.fields.addAll(fields);
     
+    // Standardize upload: Prevent generic binary type by deducing MIME type from fileName
+    final mimeType = lookupMimeType(fileName) ?? 'application/octet-stream';
+    final mediaType = MediaType.parse(mimeType);
+
     if (fileBytes != null) {
-      request.files.add(http.MultipartFile.fromBytes(fileField, fileBytes, filename: fileName));
+      request.files.add(http.MultipartFile.fromBytes(fileField, fileBytes, filename: fileName, contentType: mediaType));
     } else if (filePath != null) {
-      request.files.add(await http.MultipartFile.fromPath(fileField, filePath, filename: fileName));
+      request.files.add(await http.MultipartFile.fromPath(fileField, filePath, filename: fileName, contentType: mediaType));
     }
 
     var streamed = await _client.send(request);
@@ -233,9 +244,9 @@ class ApiClient {
       if (fields != null) retry.fields.addAll(fields);
       
       if (fileBytes != null) {
-        retry.files.add(http.MultipartFile.fromBytes(fileField, fileBytes, filename: fileName));
+        retry.files.add(http.MultipartFile.fromBytes(fileField, fileBytes, filename: fileName, contentType: mediaType));
       } else if (filePath != null) {
-        retry.files.add(await http.MultipartFile.fromPath(fileField, filePath, filename: fileName));
+        retry.files.add(await http.MultipartFile.fromPath(fileField, filePath, filename: fileName, contentType: mediaType));
       }
 
       streamed = await _client.send(retry);
@@ -252,6 +263,13 @@ class ApiClient {
     final hdrs = await _headers();
     hdrs.remove('Content-Type');
 
+    // If it's an external URL (like GCS), DO NOT send our internal API tokens!
+    // GCS will immediately reject the request with 401 Unauthorized if it sees an unknown Bearer token.
+    final isExternal = path.startsWith('http') && !path.startsWith(AppConfig.baseUrl);
+    if (isExternal) {
+      hdrs.remove('Authorization');
+    }
+
     // Send request without auto-following redirects so we can strip auth if needed
     final request = http.Request('GET', uri)..headers.addAll(hdrs);
     request.followRedirects = false;
@@ -259,7 +277,8 @@ class ApiClient {
     var streamed = await _client.send(request);
     var response = await http.Response.fromStream(streamed);
 
-    if (response.statusCode == 401 && await _tryRefresh()) {
+    // Only try to refresh our own API's tokens, not external ones
+    if (!isExternal && response.statusCode == 401 && await _tryRefresh()) {
       final refreshedHdrs = await _headers();
       refreshedHdrs.remove('Content-Type');
       final retryReq = http.Request('GET', uri)..headers.addAll(refreshedHdrs);
@@ -314,6 +333,11 @@ class ApiClient {
   }
 
   Uri _uri(String path, [Map<String, String>? queryParams]) {
+    if (path.startsWith('http')) {
+      final uri = Uri.parse(path);
+      return queryParams == null ? uri : uri.replace(queryParameters: queryParams);
+    }
+    
     final base = Uri.parse(AppConfig.baseUrl);
     return base.replace(
       path: path.startsWith('/') ? path : '/$path',

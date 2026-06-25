@@ -122,7 +122,7 @@ class _TeamViewContentState extends State<_TeamViewContent>
                   ),
                   child: TabBar(
                     controller: _tabController,
-                    labelColor: Colors.white,
+                    labelColor: Colors.green,
                     unselectedLabelColor: isDark
                         ? Colors.white60
                         : Colors.black,
@@ -131,10 +131,8 @@ class _TeamViewContentState extends State<_TeamViewContent>
                       fontWeight: FontWeight.bold,
                     ),
                     unselectedLabelStyle: const TextStyle(fontFamily: 'SFPro'),
-                    indicator: BoxDecoration(
-                      color: AppColors.primary,
-                      borderRadius: BorderRadius.circular(32),
-                    ),
+                    indicatorColor: Colors.transparent,
+                    dividerColor: Colors.transparent,
                     tabs: [
                       Tab(icon: const Icon(Icons.group), text: AppLocalizations.of(context).teamMembers),
                       Tab(icon: const Icon(Icons.bar_chart), text: AppLocalizations.of(context).teamStats),

@@ -16,8 +16,10 @@ import '../addplans/AddPlansView.dart';
 import '../appbar/CustomAppBar.dart';
 import '../core/animated_button.dart';
 import '../core/app_background.dart';
+import '../core/app_localizations.dart';
 import '../core/app_transitions.dart';
 import '../core/design_tokens.dart';
+import '../core/document_manager.dart';
 import '../event/EventModel.dart';
 import '../event/attendance_bloc.dart';
 import '../location/location_point.dart';
@@ -1023,7 +1025,7 @@ class _MatchDetailViewState extends State<MatchDetailView>
   }
 
   Future<void> _pickAndUploadDocument() async {
-    final result = await FilePicker.platform.pickFiles(withData: true);
+    final result = await DocumentManager.pickDocument(context: context, withData: true);
     if (result == null || result.files.isEmpty) return;
     final file = result.files.first;
     final String? path = kIsWeb ? null : file.path;
@@ -1079,66 +1081,12 @@ class _MatchDetailViewState extends State<MatchDetailView>
   }
 
   Future<void> _openDocument(EventDocumentDto doc) async {
-    try {
-      // Show a loading indicator
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                const SizedBox(
-                  width: 18,
-                  height: 18,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: Colors.white,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Text(AppLocalizations.of(context).downloadingDocument),
-              ],
-            ),
-            duration: const Duration(seconds: 30),
-          ),
-        );
-      }
-
-      // Use FileCacheService to get the file instantly if downloaded before
-      final fileCache = FileCacheService.instance;
-      
-      // Extract the extension from the original file name
-      final ext = doc.originalFileName.contains('.') 
-          ? '.${doc.originalFileName.split('.').last}' 
-          : '';
-
-      final tempFile = await fileCache.getFile(
-        '/events/documents/${doc.documentId}/download',
-        extension: ext,
-      );
-      if (!mounted) return;
-
-      // Dismiss the loading snackbar
-      ScaffoldMessenger.of(context).hideCurrentSnackBar();
-
-      // Open with the device's default app
-      final result = await OpenFilex.open(
-        tempFile.path,
-        type: doc.contentType,
-      );
-
-      if (result.type != ResultType.done && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(AppLocalizations.of(context).openFileError(result.message))),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).hideCurrentSnackBar();
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).openDocumentError(e.toString()))));
-      }
-    }
+    await DocumentManager.viewDocument(
+      context,
+      downloadUrl: '/events/documents/${doc.documentId}/download',
+      originalFileName: doc.originalFileName,
+      contentType: doc.contentType,
+    );
   }
 
   Future<void> _deleteDocument(EventDocumentDto doc) async {
@@ -2617,7 +2565,8 @@ class _MatchDetailViewState extends State<MatchDetailView>
     }
 
     print('DEBUG: Opening FilePicker...');
-    final result = await FilePicker.platform.pickFiles(
+    final result = await DocumentManager.pickDocument(
+      context: context,
       type: FileType.custom,
       allowedExtensions: ['pdf'],
       withData: true,
@@ -2958,20 +2907,12 @@ class _MatchDetailViewState extends State<MatchDetailView>
     if (_openingRawPdf) return;
     setState(() => _openingRawPdf = true);
     try {
-      final tempFile = await FileCacheService.instance.getFile('/clubs/$clubId/teams/$teamId/stats/matches/${event.eventId}/raw-pdf', extension: '.pdf', contentType: 'application/pdf');
-      if (!mounted) return;
-      final result = await OpenFilex.open(tempFile.path, type: 'application/pdf');
-      if (result.type != ResultType.done && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(AppLocalizations.of(context).openFileError(result.message))),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(AppLocalizations.of(context).openMatchStatsPdfError(e.toString()))),
-        );
-      }
+      await DocumentManager.viewDocument(
+        context,
+        downloadUrl: '/clubs/$clubId/teams/$teamId/stats/matches/${event.eventId}/raw-pdf',
+        originalFileName: 'match_stats.pdf',
+        contentType: 'application/pdf',
+      );
     } finally {
       if (mounted) setState(() => _openingRawPdf = false);
     }

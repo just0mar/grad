@@ -12,6 +12,8 @@ import 'package:open_filex/open_filex.dart';
 import '../appbar/CustomAppBar.dart';
 import '../core/animated_button.dart';
 import '../core/app_background.dart';
+import '../core/app_localizations.dart';
+import '../core/document_manager.dart';
 import '../core/responsive_system.dart';
 import '../models/api_models.dart';
 import '../services/api_client.dart';
@@ -83,10 +85,10 @@ class _MedicalRecordDetailViewState extends State<MedicalRecordDetailView> {
   }
 
   Future<void> _uploadDocument(MedicalDocumentRequestDto request) async {
-    final result = await FilePicker.platform.pickFiles(
+    final result = await DocumentManager.pickDocument(
+      context: context,
       type: FileType.custom,
       allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx'],
-      allowMultiple: false,
     );
     final file = result?.files.single;
     if (file == null) return;
@@ -123,28 +125,12 @@ class _MedicalRecordDetailViewState extends State<MedicalRecordDetailView> {
       _downloadingRequestId = doc.requestId;
     });
     try {
-      final ext = doc.fileName != null && doc.fileName!.contains('.') ? '.${doc.fileName!.split('.').last}' : '';
-      final tempFile = await FileCacheService.instance.getFile('/medical/document-requests/${doc.requestId}/download', extension: ext, contentType: doc.contentType);
-      if (!mounted) return;
-      final openResult = await OpenFilex.open(tempFile.path, type: doc.contentType);
-
-      if (openResult.type != ResultType.done && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(AppLocalizations.of(context).openFileError(openResult.message))),
-        );
-      }
-    } on ApiException catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.message)),
-        );
-      }
-    } catch (_) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(AppLocalizations.of(context).documentDownloadFailed)),
-        );
-      }
+      await DocumentManager.viewDocument(
+        context,
+        downloadUrl: '/medical/document-requests/${doc.requestId}/download',
+        originalFileName: doc.fileName ?? 'document.pdf',
+        contentType: doc.contentType,
+      );
     } finally {
       if (mounted) {
         setState(() {
@@ -161,37 +147,12 @@ class _MedicalRecordDetailViewState extends State<MedicalRecordDetailView> {
       _previewingRequestId = doc.requestId;
     });
     try {
-      final result = await _medicalService.downloadDocument(doc.requestId);
-      if (!mounted) return;
-
-      // Save to temp and open with external app
-      final tempDir = await getTemporaryDirectory();
-      final safeName = _safeFileName(result.fileName);
-      final file = File('${tempDir.path}${Platform.pathSeparator}$safeName');
-      await file.writeAsBytes(result.bytes);
-
-      final openResult = await OpenFilex.open(
-        file.path,
-        type: result.contentType,
+      await DocumentManager.viewDocument(
+        context,
+        downloadUrl: '/medical/document-requests/${doc.requestId}/download',
+        originalFileName: doc.fileName ?? 'document.pdf',
+        contentType: doc.contentType,
       );
-
-      if (openResult.type != ResultType.done && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(AppLocalizations.of(context).openFileError(openResult.message))),
-        );
-      }
-    } on ApiException catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.message)),
-        );
-      }
-    } catch (_) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(AppLocalizations.of(context).documentPreviewFailed)),
-        );
-      }
     } finally {
       if (mounted) {
         setState(() {

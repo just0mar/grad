@@ -22,6 +22,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../core/animated_button.dart';
 import '../core/app_background.dart';
 import '../core/app_transitions.dart';
+import '../core/document_manager.dart';
 import '../location/location_point.dart';
 import '../location/location_service.dart';
 import '../location/osm_map.dart';
@@ -501,7 +502,8 @@ class _ChatBodyState extends State<_ChatBody> with WidgetsBindingObserver {
   }
 
   Future<void> _pickDocument() async {
-    final result = await FilePicker.platform.pickFiles(
+    final result = await DocumentManager.pickDocument(
+      context: context,
       type: FileType.custom,
       allowedExtensions: [
         'pdf',
@@ -516,10 +518,10 @@ class _ChatBodyState extends State<_ChatBody> with WidgetsBindingObserver {
       ],
     );
     final file = result?.files.single;
-      if (file == null || !mounted) return;
-      context.read<ChatBloc>().add(
-        SendMediaMessage(fileBytes: file.bytes, filePath: kIsWeb ? null : file.path, fileName: file.name),
-      );
+    if (file == null || !mounted) return;
+    context.read<ChatBloc>().add(
+      SendMediaMessage(fileBytes: file.bytes, filePath: kIsWeb ? null : file.path, fileName: file.name),
+    );
     _scrollToBottom();
   }
 
@@ -2323,47 +2325,13 @@ class _MessageBubble extends StatelessWidget {
     final mediaPath = message.mediaUrl;
     if (mediaPath == null || mediaPath.isEmpty) return;
 
-    try {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              const SizedBox(
-                width: 18,
-                height: 18,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: Colors.white,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Text(AppLocalizations.of(context).openingDocument),
-            ],
-          ),
-          duration: const Duration(seconds: 30),
-        ),
-      );
-
-      final fileName = message.mediaFileName ?? 'document';
-      final ext = fileName.contains('.') ? '.${fileName.split('.').last}' : '';
-      final tempFile = await FileCacheService.instance.getFile(mediaPath, extension: ext);
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(context).hideCurrentSnackBar();
-
-      final result = await OpenFilex.open(tempFile.path);
-      if (result.type != ResultType.done && context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(AppLocalizations.of(context).openFileErrorMsg.replaceAll('%s', result.message))),
-        );
-      }
-    } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).hideCurrentSnackBar();
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).openDocumentError(e.toString()))));
-      }
-    }
+    final fileName = message.mediaFileName ?? 'document';
+    
+    await DocumentManager.viewDocument(
+      context,
+      downloadUrl: mediaPath,
+      originalFileName: fileName,
+    );
   }
 
   Widget _fileChip() {

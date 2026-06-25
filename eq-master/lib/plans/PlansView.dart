@@ -13,6 +13,8 @@ import 'package:path_provider/path_provider.dart';
 import 'package:open_filex/open_filex.dart';
 
 import '../appbar/CustomAppBar.dart';
+import '../core/app_localizations.dart';
+import '../core/document_manager.dart';
 import '../core/app_transitions.dart';
 import '../models/api_models.dart';
 import '../services/plan_service.dart';
@@ -1305,32 +1307,12 @@ class _DocumentCardState extends State<_DocumentCard> {
   Future<void> _onTap() async {
     setState(() => _busy = true);
     try {
-      final ext = widget.doc.fileName.contains('.') ? '.${widget.doc.fileName.split('.').last}' : '';
-      final tempFile = await FileCacheService.instance.getFile(
-        '/plans/${widget.planId}/documents/${widget.doc.documentId}/download',
-        extension: ext,
+      await DocumentManager.viewDocument(
+        context,
+        downloadUrl: '/plans/${widget.planId}/documents/${widget.doc.documentId}/download',
+        originalFileName: widget.doc.fileName,
         contentType: widget.doc.contentType,
       );
-
-      if (!mounted) return;
-
-      final openResult = await OpenFilex.open(
-        tempFile.path,
-        type: widget.doc.contentType,
-      );
-
-      if (openResult.type != ResultType.done && mounted) {
-        final t = AppLocalizations.of(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(t.plansErrorOpenFile(openResult.message))),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(AppLocalizations.of(context).plansErrorOpenDoc)),
-        );
-      }
     } finally {
       if (mounted) setState(() => _busy = false);
     }

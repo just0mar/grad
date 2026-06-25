@@ -1,4 +1,4 @@
-# eqq
+# equipex
 
 A new Flutter project.
 

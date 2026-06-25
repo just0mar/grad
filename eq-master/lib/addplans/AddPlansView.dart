@@ -940,22 +940,22 @@ class _FullScreenTacticalBoardPageState
       ),
       body: AppBackground(
         child: SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 20),
-              child: _BasketballTacticalBoard(
-                players: _players,
-                arrows: _arrows,
-                onPlayersChanged: _setPlayers,
-                onArrowsChanged: _setArrows,
-                onLoadPreset: _loadPreset,
-                savedPlays: _savedPlays,
-                onSaveCurrentPlay: _saveCurrentPlay,
-                isFullScreen: true,
-              ),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 20),
+            child: _BasketballTacticalBoard(
+              players: _players,
+              arrows: _arrows,
+              onPlayersChanged: _setPlayers,
+              onArrowsChanged: _setArrows,
+              onLoadPreset: _loadPreset,
+              savedPlays: _savedPlays,
+              onSaveCurrentPlay: _saveCurrentPlay,
+              isFullScreen: true,
             ),
           ),
         ),
-      );
+      ),
+    );
   }
 }
 

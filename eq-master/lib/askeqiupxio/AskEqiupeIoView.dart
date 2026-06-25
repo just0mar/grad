@@ -109,7 +109,7 @@ class _AskEquipoViewState extends State<AskEquipoView> {
     return Scaffold(
       extendBodyBehindAppBar: true,
       resizeToAvoidBottomInset: false,
-      appBar: CustomAppBar(title: AppLocalizations.of(context).askEqTitle, showTeamSwitcher: false),
+      appBar: CustomAppBar(title: AppLocalizations.of(context).askEqTitle, showTeamSwitcher: true),
       body: AppBackground(
         child: SafeArea(
           child: Column(
@@ -261,16 +261,6 @@ class _MessageInput extends StatelessWidget {
           suffixIcon: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              IconButton(
-                icon: const Icon(Icons.attach_file, color: AppColors.primary),
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(AppLocalizations.of(context).askEqFileSoon),
-                    ),
-                  );
-                },
-              ),
               Padding(
                 padding: const EdgeInsetsDirectional.only(end: 8),
                 child: CircleAvatar(

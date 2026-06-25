@@ -667,6 +667,8 @@ import '../services/file_cache_service.dart';
 // import 'package:flutter/material.dart';
 import '../services/file_cache_service.dart';
 // import '../core/app_localizations.dart';
+import '../core/document_manager.dart';
+import '../models/api_models.dart';
 import '../appbar/CustomAppBar.dart';
 // import 'GameHistoryModel.dart';
 //
@@ -1091,20 +1093,12 @@ class _GameDetailViewState extends State<GameDetailHistoryView> with TickerProvi
     if (game.eventId == null || game.clubId == null || game.teamId == null) return;
     setState(() => _openingRawPdf = true);
     try {
-      final tempFile = await FileCacheService.instance.getFile('/clubs/${game.clubId}/teams/${game.teamId}/stats/matches/${game.eventId}/raw-pdf', extension: '.pdf', contentType: 'application/pdf');
-      if (!mounted) return;
-      final openResult = await OpenFilex.open(tempFile.path, type: 'application/pdf');
-      if (openResult.type != ResultType.done && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(AppLocalizations.of(context).openFileErrorMsg.replaceAll('%s', openResult.message))),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(AppLocalizations.of(context).statsPdfError(e.toString()))),
-        );
-      }
+      await DocumentManager.viewDocument(
+        context,
+        downloadUrl: '/clubs/${game.clubId}/teams/${game.teamId}/stats/matches/${game.eventId}/raw-pdf',
+        originalFileName: _rawPdfFileName ?? 'match_stats.pdf',
+        contentType: 'application/pdf',
+      );
     } finally {
       if (mounted) setState(() => _openingRawPdf = false);
     }
@@ -1320,21 +1314,12 @@ class _GameDetailViewState extends State<GameDetailHistoryView> with TickerProvi
     if (_openingDocumentId != null) return;
     setState(() => _openingDocumentId = doc.documentId);
     try {
-      final ext = doc.originalFileName.contains('.') ? '.${doc.originalFileName.split('.').last}' : '';
-      final tempFile = await FileCacheService.instance.getFile('/events/documents/${doc.documentId}/download', extension: ext, contentType: doc.contentType);
-      if (!mounted) return;
-      final openResult = await OpenFilex.open(tempFile.path, type: doc.contentType);
-      if (openResult.type != ResultType.done && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(AppLocalizations.of(context).openFileError(openResult.message))),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(AppLocalizations.of(context).openDocumentError(e.toString()))),
-        );
-      }
+      await DocumentManager.viewDocument(
+        context,
+        downloadUrl: '/events/documents/${doc.documentId}/download',
+        originalFileName: doc.originalFileName,
+        contentType: doc.contentType,
+      );
     } finally {
       if (mounted) setState(() => _openingDocumentId = null);
     }
@@ -1496,17 +1481,7 @@ class _GameDetailViewState extends State<GameDetailHistoryView> with TickerProvi
     final game = widget.game;
     if (game.eventId == null || game.clubId == null || game.teamId == null) return;
 
-    FilePickerResult? picked;
-    try {
-      picked = await FilePicker.platform.pickFiles(type: FileType.any);
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(AppLocalizations.of(context).filePickerError(e.toString()))),
-        );
-      }
-      return;
-    }
+    final picked = await DocumentManager.pickDocument(context: context, type: FileType.any);
     if (picked == null || picked.files.isEmpty || !mounted) return;
 
     final file = picked.files.single;
@@ -1869,17 +1844,7 @@ class _GameDetailViewState extends State<GameDetailHistoryView> with TickerProvi
     if (_savingVideo) return;
 
     // 1. Pick a video file from the device.
-    FilePickerResult? picked;
-    try {
-      picked = await FilePicker.platform.pickFiles(type: FileType.video);
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(AppLocalizations.of(context).filePickerError(e.toString()))),
-        );
-      }
-      return;
-    }
+    final picked = await DocumentManager.pickDocument(context: context, type: FileType.video);
     if (picked == null || picked.files.isEmpty || !mounted) return;
 
     final file = picked.files.single;
